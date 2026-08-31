@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - BookMyShow</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="../index.html" class="logo">Book<span>My</span>Show</a>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <div class="nav-links">
+            <a href="../index.html">Home</a>
+            <a href="movies.html">Movies</a>
+            <a href="theaters.html">Theaters</a>
+            <a href="bookings.html" class="active">My Bookings</a>
+        </div>
+        <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">My Tickets & Bookings</h2>
+        </div>
+        <div id="bookings-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        async function loadBookings() {
+            const user = getLoggedInUser();
+            if (!user) {
+                document.getElementById('bookings-list').innerHTML = `
+                    <div style="text-align:center; padding:4rem 1.5rem; background:var(--bg-surface); border-radius:var(--radius-lg); border:1.5px dashed var(--border-card);">
+                        <div style="font-size:3.5rem; margin-bottom:1rem;">🔐</div>
+                        <h3 style="font-family:'Outfit',sans-serif; font-size:1.4rem; color:#fff; margin-bottom:0.5rem;">Authentication Required</h3>
+                        <p style="color:var(--text-muted); margin-bottom:1.5rem;">Please sign in to view your booked movie tickets.</p>
+                        <a href="login.html" class="btn btn-primary">Sign In Now</a>
+                    </div>`;
+                return;
+            }
+            if (user.role && user.role.toLowerCase() === 'admin') {
+                showToast('Admin users should use the Admin Panel', 'info');
+                setTimeout(() => window.location.href = 'admin.html', 800);
+                return;
+            }
+
+            showLoading('bookings-list');
+            try {
+                const bookings = await BookingAPI.getByUser(user.id);
+                const visible = (bookings || []).filter(b => b.status !== 'CANCELLED');
+                if (visible.length === 0) {
+                    showEmpty('bookings-list', 'No active bookings found. Go explore movies & book shows! 🎬');
+                    return;
+                }
+
+                document.getElementById('bookings-list').innerHTML = visible.map(b => `
+                    <div class="form-card" style="padding:1.75rem; border:1px solid var(--border-card); border-left:5px solid var(--success); position:relative; overflow:hidden;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1.25rem;">
+                            <div style="flex:1; min-width:250px;">
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                                    <span class="badge" style="background:var(--success-glow); color:var(--success); border:1px solid rgba(16,185,129,0.3);">CONFIRMED TICKET</span>
+                                    <span style="font-size:0.8rem; color:var(--text-muted);">ID #${b.id}</span>
+                                </div>
+                                <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.6rem;">🎬 ${b.show?.movie?.title || 'Movie Show'}</h3>
+                                <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:0.92rem; color:var(--text-secondary);">
+                                    <div>🏛️ <strong>${b.show?.screen?.theater?.name || 'Multiplex'}</strong> — ${b.show?.screen?.name || 'Screen 1'}</div>
+                                    <div>📅 <strong>${b.show?.showDate || 'Date'}</strong> &nbsp;|&nbsp; 🕐 <strong>${b.show?.startTime || 'Time'}</strong></div>
+                                    <div>💺 Seats: <strong style="color:var(--primary); font-size:1.05rem;">${b.seats ? b.seats.map(s => s.seatNumber).join(', ') : 'N/A'}</strong></div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Booked on: ${b.bookedAt ? new Date(b.bookedAt).toLocaleString() : 'Just now'}</div>
+                                </div>
+                            </div>
+                            <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:1rem;">
+                                <div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Total Paid</div>
+                                    <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${b.totalPrice || 0}</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="cancelBooking(${b.id})">Cancel Ticket</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showEmpty('bookings-list', 'Could not load your ticket history.');
+            }
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            try {
+                await BookingAPI.cancel(id);
+                showToast('Booking cancelled successfully', 'success');
+                loadBookings();
+            } catch (e) {
+                showToast(e.message || 'Could not cancel booking', 'error');
+            }
+        }
+
+        loadBookings();
+    </script>
+</body>
+</html>

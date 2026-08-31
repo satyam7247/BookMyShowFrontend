@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BookMyShow</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="../index.html" class="logo">Book<span>My</span>Show</a>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <div class="nav-links">
+            <a href="../index.html">Home</a>
+            <a href="movies.html">Movies</a>
+            <a href="theaters.html">Theaters</a>
+            <a href="bookings.html">My Bookings</a>
+        </div>
+        <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">User Dashboard</h2>
+        </div>
+
+        <section style="margin-bottom:2rem;">
+            <div id="user-info"></div>
+        </section>
+
+        <section style="margin-bottom:2.5rem;">
+            <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff; margin-bottom:1rem;">Upcoming Bookings</h3>
+            <div id="dashboard-bookings" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+        </section>
+
+        <section>
+            <div class="section-header" style="margin-bottom:1.25rem;">
+                <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff;">Recommended Movies</h3>
+                <a href="movies.html" class="btn btn-sm btn-outline">View All →</a>
+            </div>
+            <div class="grid grid-4" id="dashboard-movies"></div>
+        </section>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            try {
+                await BookingAPI.cancel(id);
+                showToast('Booking cancelled', 'success');
+                window.location.reload();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getLoggedInUser();
+            if (!user) {
+                showToast('Please login to view dashboard', 'error');
+                setTimeout(() => window.location.href = 'login.html', 800);
+                return;
+            }
+            if (user.role && user.role.toLowerCase() === 'admin') {
+                showToast('Admin users should use the Admin Panel', 'error');
+                setTimeout(() => window.location.href = 'admin.html', 800);
+                return;
+            }
+
+            document.getElementById('user-info').innerHTML = `
+                <div class="form-card" style="padding:1.5rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${user.name || 'User'} 👋</h3>
+                        <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;">${user.email} &nbsp;•&nbsp; ${user.phone || 'No phone added'}</p>
+                    </div>
+                    <div>
+                        <a href="bookings.html" class="btn btn-primary">My Ticket History</a>
+                    </div>
+                </div>
+            `;
+
+            // Load bookings
+            const bookingsEl = document.getElementById('dashboard-bookings');
+            showLoading('dashboard-bookings');
+            try {
+                const bookings = await BookingAPI.getByUser(user.id);
+                const upcoming = (bookings || []).filter(b => b.status === 'CONFIRMED');
+                if (upcoming.length === 0) {
+                    showEmpty('dashboard-bookings', 'No upcoming show bookings found');
+                } else {
+                    bookingsEl.innerHTML = upcoming.map(b => `
+                        <div class="show-card" style="border-left:4px solid var(--success);">
+                            <div class="show-info">
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.3rem;">
+                                    <span class="badge" style="background:var(--success-glow); color:var(--success);">CONFIRMED</span>
+                                    <span style="font-size:0.8rem; color:var(--text-muted);">ID #${b.id}</span>
+                                </div>
+                                <h4>🎬 ${b.show?.movie?.title || 'Movie'}</h4>
+                                <p>🏛️ ${b.show?.screen?.theater?.name || 'Multiplex'} — ${b.show?.screen?.name || 'Screen 1'}</p>
+                                <p>📅 ${b.show?.showDate || ''} &nbsp;|&nbsp; 🕐 ${b.show?.startTime || ''} &nbsp;|&nbsp; 💺 Seats: ${b.seats ? b.seats.map(s=>s.seatNumber).join(', ') : 'N/A'}</p>
+                            </div>
+                            <div class="show-meta">
+                                <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
+                                <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking(${b.id})">Cancel Ticket</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                showEmpty('dashboard-bookings', 'Could not load bookings');
+            }
+
+            // Load movies
+            const moviesEl = document.getElementById('dashboard-movies');
+            showLoading('dashboard-movies');
+            try {
+                const movies = await MovieAPI.getAll();
+                if (!movies || movies.length === 0) {
+                    showEmpty('dashboard-movies', 'No movies currently showing');
+                } else {
+                    const cards = await Promise.all(movies.slice(0, 4).map(async (m) => ({
+                        movie: m,
+                        poster: await getBestMoviePoster(m),
+                    })));
+                    moviesEl.innerHTML = movies.slice(0, 4).map((m, i) => {
+                        const poster = cards[i]?.poster || '';
+                        return `
+                            <a href="movie-detail.html?id=${m.id}" class="card">
+                                <div class="card-img ${poster ? '' : 'no-image'}">
+                                    ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='🎬';" />` : '🎬'}
+                                </div>
+                                <div class="card-body">
+                                    <h3>${m.title}</h3>
+                                    <p>${m.description || 'Watch now in nearest cinema.'}</p>
+                                    <div class="badge-group">
+                                        ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ''}
+                                        ${m.rating ? `<span class="badge badge-rating">⭐ ${m.rating}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <span class="btn btn-sm btn-primary btn-block">Book Now</span>
+                                </div>
+                            </a>
+                        `;
+                    }).join('');
+                }
+            } catch (e) {
+                showEmpty('dashboard-movies', 'Could not load movies');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookMyShow - Movie Tickets, Shows & Entertainment</title>
+    <link rel="stylesheet" href="pages/css/style.css" />
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <a href="index.html" class="logo">Book<span>My</span>Show</a>
+      <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+      <div class="nav-links">
+        <a href="index.html" class="active">Home</a>
+        <a href="pages/movies.html">Movies</a>
+        <a href="pages/theaters.html">Theaters</a>
+        <a href="pages/bookings.html">My Bookings</a>
+      </div>
+      <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <!-- CITY BAR -->
+    <div class="city-bar" id="city-bar">
+      <span class="city-bar-label">📍 City:</span>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-slideshow" id="hero-slideshow"></div>
+      <div class="hero-content">
+        <h1>Your <span>Entertainment</span> Starts Here</h1>
+        <p>Book movie tickets for the latest blockbuster shows in your city</p>
+        <div class="search-bar">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search by movie title, genre or language..."
+            oninput="searchMovies()"
+          />
+          <button class="btn btn-primary" onclick="searchMovies()">Search</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOVIES SECTION -->
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Now Showing</h2>
+        <a href="pages/movies.html" class="btn btn-sm btn-outline">Explore All Movies →</a>
+      </div>
+      <div class="grid grid-4" id="movies-grid"></div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+      let allMovies = [];
+      let heroSlideTimer = null;
+      let heroSlideIndex = 0;
+      const fallbackHeroPhotos = [
+        "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=1600&q=80"
+      ];
+
+      async function loadCities() {
+        try {
+          const cities = await CityAPI.getAll();
+          const bar = document.getElementById("city-bar");
+          if (!cities || cities.length === 0) return;
+          cities.forEach((city, i) => {
+            const chip = document.createElement("button");
+            chip.className = "city-chip" + (i === 0 ? " active" : "");
+            chip.textContent = city.name;
+            chip.onclick = () => {
+              document
+                .querySelectorAll(".city-chip")
+                .forEach((c) => c.classList.remove("active"));
+              chip.classList.add("active");
+              showToast(`Selected City: ${city.name}`, "info");
+            };
+            bar.appendChild(chip);
+          });
+        } catch (e) {
+          console.log("No cities loaded yet");
+        }
+      }
+
+      async function loadMovies() {
+        showLoading("movies-grid");
+        try {
+          allMovies = await MovieAPI.getAll();
+          await renderMovies(allMovies);
+          await startHeroSlideshow(allMovies);
+        } catch (e) {
+          showEmpty(
+            "movies-grid",
+            "Could not load movies. Is the backend running?",
+          );
+        }
+      }
+
+      async function renderMovies(movies) {
+        const grid = document.getElementById("movies-grid");
+        if (!movies || movies.length === 0) {
+          showEmpty("movies-grid", "No movies available right now");
+          return;
+        }
+        const canBook = !userIsAdmin();
+        const cards = await Promise.all(
+          movies.map(async (m) => ({
+            movie: m,
+            poster: await getBestMoviePoster(m),
+          })),
+        );
+        grid.innerHTML = movies
+          .map((m, i) => {
+            const poster = cards[i]?.poster || "";
+            return `
+                <a href="pages/movie-detail.html?id=${m.id}" class="card">
+                    <div class="card-img ${poster ? '' : 'no-image'}">
+                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='🎬';" />` : '🎬'}
+                    </div>
+                    <div class="card-body">
+                        <h3>${m.title}</h3>
+                        <p>${m.description || "Experience the thrill in high definition cinema sound & visual."}</p>
+                        <div class="badge-group">
+                            ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ""}
+                            ${m.language ? `<span class="badge badge-lang">${m.language}</span>` : ""}
+                            ${m.rating ? `<span class="badge badge-rating">⭐ ${m.rating}</span>` : ""}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="duration">${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
+                        ${canBook ? '<span class="btn btn-sm btn-primary">Book Tickets</span>' : '<span class="btn btn-sm btn-outline">Admin View</span>'}
+                    </div>
+                </a>
+            `;
+          })
+          .join("");
+      }
+
+      function getMoviePoster(movie) {
+        if (!movie || typeof movie !== "object") return "";
+        const preferredKeys = [
+          "posterUrl",
+          "posterURL",
+          "poster",
+          "posterImage",
+          "posterPath",
+          "imageUrl",
+          "imageURL",
+          "image",
+          "moviePoster",
+          "thumbnail",
+          "cover",
+          "coverImage",
+          "banner"
+        ];
+        for (const key of preferredKeys) {
+          const value = movie[key];
+          if (typeof value === "string" && value.trim()) return value.trim();
+        }
+        for (const [key, value] of Object.entries(movie)) {
+          if (typeof value === "string" && /poster|image|cover|thumbnail|banner/i.test(key) && value.trim()) {
+            return value.trim();
+          }
+        }
+        return "";
+      }
+
+      async function startHeroSlideshow(movies) {
+        const heroBg = document.getElementById("hero-slideshow");
+        const posters = (await Promise.all(movies.map((m) => getBestMoviePoster(m)))).filter(Boolean);
+        const heroPhotos = posters.length ? posters : fallbackHeroPhotos;
+
+        if (!heroBg || heroPhotos.length === 0) return;
+
+        if (heroSlideTimer) clearInterval(heroSlideTimer);
+
+        const showPoster = () => {
+          const imageUrl = heroPhotos[heroSlideIndex];
+          heroBg.style.backgroundImage = `url("${imageUrl}")`;
+          document.documentElement.style.setProperty("--search-bg-image", `url("${imageUrl}")`);
+          heroSlideIndex = (heroSlideIndex + 1) % heroPhotos.length;
+        };
+
+        showPoster();
+        heroSlideTimer = setInterval(showPoster, 4000);
+      }
+
+      function searchMovies() {
+        const q = document
+          .getElementById("search-input")
+          .value.toLowerCase()
+          .trim();
+        if (!q) {
+          renderMovies(allMovies);
+          return;
+        }
+        const filtered = allMovies.filter(
+          (m) =>
+            String(m.title || "").toLowerCase().includes(q) ||
+            String(m.genre || "").toLowerCase().includes(q) ||
+            String(m.language || "").toLowerCase().includes(q),
+        );
+        renderMovies(filtered);
+      }
+
+      loadCities();
+      loadMovies();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Movies - BookMyShow</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <a href="../index.html" class="logo">Book<span>My</span>Show</a>
+      <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+      <div class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="movies.html" class="active">Movies</a>
+        <a href="theaters.html">Theaters</a>
+        <a href="bookings.html">My Bookings</a>
+      </div>
+      <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">All Movies</h2>
+      </div>
+
+      <!-- Modern Filter Toolbar -->
+      <div class="form-card" style="margin-bottom: 2.5rem; padding: 1.25rem 1.5rem;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <div style="flex: 2; min-width: 240px;">
+            <input
+              type="text"
+              id="search"
+              placeholder="🔍 Search movies by title, actor, or keyword..."
+              oninput="filterMovies()"
+            />
+          </div>
+          <div style="flex: 1; min-width: 150px;">
+            <select id="genre-filter" onchange="filterMovies()">
+              <option value="">All Genres</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 150px;">
+            <select id="lang-filter" onchange="filterMovies()">
+              <option value="">All Languages</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movie Cards Grid -->
+      <div class="grid grid-4" id="movies-grid"></div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+      let allMovies = [];
+
+      function getMoviePoster(movie) {
+        if (!movie || typeof movie !== "object") return "";
+        const preferredKeys = [
+          "posterUrl",
+          "posterURL",
+          "poster",
+          "posterImage",
+          "posterPath",
+          "imageUrl",
+          "imageURL",
+          "image",
+          "moviePoster",
+          "thumbnail",
+          "cover",
+          "coverImage",
+          "banner"
+        ];
+        for (const key of preferredKeys) {
+          const value = movie[key];
+          if (typeof value === "string" && value.trim()) return value.trim();
+        }
+        for (const [key, value] of Object.entries(movie)) {
+          if (typeof value === "string" && /poster|image|cover|thumbnail|banner/i.test(key) && value.trim()) {
+            return value.trim();
+          }
+        }
+        return "";
+      }
+
+      async function loadMovies() {
+        showLoading("movies-grid");
+        try {
+          allMovies = await MovieAPI.getAll();
+          await renderMovies(allMovies);
+          populateFilters();
+        } catch (e) {
+          showEmpty("movies-grid", "Could not load movies. Please check backend connection.");
+        }
+      }
+
+      function populateFilters() {
+        const genres = [
+          ...new Set(allMovies.map((m) => m.genre).filter(Boolean)),
+        ];
+        const langs = [
+          ...new Set(allMovies.map((m) => m.language).filter(Boolean)),
+        ];
+        const gf = document.getElementById("genre-filter");
+        const lf = document.getElementById("lang-filter");
+        genres.forEach(
+          (g) => (gf.innerHTML += `<option value="${g}">${g}</option>`),
+        );
+        langs.forEach(
+          (l) => (lf.innerHTML += `<option value="${l}">${l}</option>`),
+        );
+      }
+
+      function filterMovies() {
+        const q = document.getElementById("search").value.toLowerCase().trim();
+        const genre = document.getElementById("genre-filter").value;
+        const lang = document.getElementById("lang-filter").value;
+        let filtered = allMovies;
+        if (q)
+          filtered = filtered.filter((m) => String(m.title || "").toLowerCase().includes(q) || String(m.description || "").toLowerCase().includes(q));
+        if (genre) filtered = filtered.filter((m) => m.genre === genre);
+        if (lang) filtered = filtered.filter((m) => m.language === lang);
+        renderMovies(filtered);
+      }
+
+      async function renderMovies(movies) {
+        const grid = document.getElementById("movies-grid");
+        if (!movies || movies.length === 0) {
+          showEmpty("movies-grid", "No movies matching your search criteria");
+          return;
+        }
+        const canBook = !userIsAdmin();
+        const cards = await Promise.all(
+          movies.map(async (m) => ({
+            movie: m,
+            poster: await getBestMoviePoster(m),
+          })),
+        );
+        grid.innerHTML = movies
+          .map((m, i) => {
+            const poster = cards[i]?.poster || "";
+            return `
+                <a href="movie-detail.html?id=${m.id}" class="card">
+                    <div class="card-img ${poster ? '' : 'no-image'}">
+                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='🎬';" />` : '🎬'}
+                    </div>
+                    <div class="card-body">
+                        <h3>${m.title}</h3>
+                        <p>${m.description || "Experience the thrill in cinema halls near you."}</p>
+                        <div class="badge-group">
+                            ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ""}
+                            ${m.language ? `<span class="badge badge-lang">${m.language}</span>` : ""}
+                            ${m.rating ? `<span class="badge badge-rating">⭐ ${m.rating}</span>` : ""}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="duration">${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
+                        ${canBook ? '<span class="btn btn-sm btn-primary">Book Now</span>' : '<span class="btn btn-sm btn-outline">Admin View</span>'}
+                    </div>
+                </a>
+            `;
+          })
+          .join("");
+      }
+
+      loadMovies();
+    </script>
+  </body>
+</html>

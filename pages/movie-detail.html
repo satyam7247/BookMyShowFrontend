@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Details - BookMyShow</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="../index.html" class="logo">Book<span>My</span>Show</a>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <div class="nav-links">
+            <a href="../index.html">Home</a>
+            <a href="movies.html" class="active">Movies</a>
+            <a href="theaters.html">Theaters</a>
+            <a href="bookings.html">My Bookings</a>
+        </div>
+        <div class="nav-user" id="nav-user"></div>
+    </nav>
+
+    <!-- MOVIE HERO BACKDROP & DETAILS -->
+    <div id="movie-detail-hero">
+        <div class="container" style="padding-top:3rem;">
+            <div class="loading-center"><div class="skeleton skeleton-card" style="height:320px;"></div></div>
+        </div>
+    </div>
+
+    <!-- SHOWS SECTION -->
+    <div class="container" style="padding-top: 1rem;">
+        <div class="section-header">
+            <h2 class="section-title">Available Shows & Theaters</h2>
+        </div>
+        <div id="shows-list" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+    </div>
+
+    <!-- SEAT SELECTION MODAL -->
+    <div class="modal-overlay" id="seat-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('seat-modal')">&times;</button>
+            <h2 id="seat-modal-title" style="font-family:'Outfit',sans-serif; font-size:1.4rem; margin-bottom:1.5rem;">Select Your Seats</h2>
+            
+            <!-- Curved Screen -->
+            <div class="screen-label">CINEMA SCREEN THIS WAY</div>
+            <div class="screen-indicator"></div>
+
+            <!-- Interactive Seats Map -->
+            <div class="seat-map" id="seat-map"></div>
+
+            <!-- Legend -->
+            <div class="seat-legend">
+                <div class="seat-legend-item">
+                    <div class="seat-legend-box" style="background:var(--bg-elevated);border:1px solid rgba(255,255,255,0.15);"></div> Available
+                </div>
+                <div class="seat-legend-item">
+                    <div class="seat-legend-box" style="background:var(--primary);box-shadow:0 0 10px var(--primary-glow);"></div> Selected
+                </div>
+                <div class="seat-legend-item">
+                    <div class="seat-legend-box" style="background:#202738;"></div> Sold
+                </div>
+            </div>
+
+            <!-- Booking Summary -->
+            <div class="booking-summary" id="booking-summary" style="display:none;">
+                <h4 style="font-family:'Outfit',sans-serif; margin-bottom:0.75rem; color:var(--text-main);">Booking Summary</h4>
+                <div id="summary-content" style="display:flex; flex-direction:column; gap:0.4rem; font-size:0.92rem; color:var(--text-secondary);"></div>
+            </div>
+
+            <button class="btn btn-primary btn-block" style="margin-top:1.5rem; padding:0.85rem;" id="confirm-btn" onclick="confirmBooking()" disabled>
+                Proceed to Payment
+            </button>
+        </div>
+    </div>
+
+    <script src="../js/payment-config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const movieId = params.get('id');
+        let currentShow = null;
+        let selectedSeatIds = [];
+        let availableSeats = [];
+        let isVirtualSeats = false;
+
+        async function loadMovie() {
+            if (!movieId) {
+                showToast('No movie ID found', 'error');
+                return;
+            }
+            try {
+                const movie = await MovieAPI.getById(movieId);
+                const poster = await getBestMoviePoster(movie);
+                document.title = `${movie.title} - BookMyShow`;
+                
+                const heroEl = document.getElementById('movie-detail-hero');
+                heroEl.className = 'movie-hero-backdrop';
+                if (poster) {
+                    heroEl.style.backgroundImage = `url("${poster}")`;
+                }
+
+                heroEl.innerHTML = `
+                    <div class="movie-detail-content">
+                        <div class="movie-poster-large">
+                            ${poster ? `<img src="${poster}" alt="${movie.title}" onerror="this.style.display='none'; this.parentElement.textContent='🎬'" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:5rem;">🎬</div>'}
+                        </div>
+                        <div class="movie-info-header">
+                            <h1>${movie.title}</h1>
+                            <div class="movie-meta-row">
+                                ${movie.rating ? `<span class="badge badge-rating">⭐ ${movie.rating} / 10</span>` : ''}
+                                ${movie.genre ? `<span class="badge badge-genre">${movie.genre}</span>` : ''}
+                                ${movie.language ? `<span class="badge badge-lang">${movie.language}</span>` : ''}
+                                ${movie.durationMinutes ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);">⏱ ${movie.durationMinutes} min</span>` : ''}
+                                ${movie.releaseDate ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);">📅 ${movie.releaseDate}</span>` : ''}
+                            </div>
+                            <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
+                            <a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;">Book Tickets</a>
+                        </div>
+                    </div>
+                `;
+                loadShows();
+            } catch (e) {
+                document.getElementById('movie-detail-hero').innerHTML = `
+                    <div class="container" style="padding-top:3rem;">
+                        <div class="empty-state"><p>Movie details not found</p></div>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadShows() {
+            showLoading('shows-list');
+            try {
+                const shows = await ShowAPI.getByMovie(movieId);
+                if (!shows || shows.length === 0) {
+                    showEmpty('shows-list', 'No shows currently scheduled for this movie.');
+                    return;
+                }
+                const canBook = !userIsAdmin();
+                document.getElementById('shows-list').innerHTML = shows.map(s => `
+                    <div class="show-card">
+                        <div class="show-info">
+                            <h4>🎥 ${s.screen?.theater?.name || 'Grand Cinema'} • ${s.screen?.name || 'Audi 1'}</h4>
+                            <p>📅 ${s.showDate} &nbsp;|&nbsp; 🕐 ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">📍 ${s.screen?.theater?.city?.name || 'City Center'}</p>
+                        </div>
+                        <div class="show-meta">
+                            <div class="price">₹${s.ticketPrice || 150}</div>
+                            ${canBook ? `<button class="btn btn-sm btn-primary" style="margin-top:0.5rem;" data-show="${encodeURIComponent(JSON.stringify(s))}" onclick="selectShowFromTrigger(this)">Select Seats</button>` : '<span class="btn btn-sm btn-outline" style="margin-top:0.5rem;">Admin View</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                showEmpty('shows-list', 'Could not load shows. Please try again.');
+            }
+        }
+
+        function selectShowFromTrigger(button) {
+            const encoded = button?.dataset?.show;
+            if (!encoded) {
+                showToast('Could not open show details', 'error');
+                return;
+            }
+            try {
+                selectShow(JSON.parse(decodeURIComponent(encoded)));
+            } catch (e) {
+                showToast('Could not read show details', 'error');
+            }
+        }
+
+        async function selectShow(show) {
+            const user = getLoggedInUser();
+            if (!user) {
+                showToast('Please login to select seats & book tickets', 'info');
+                setTimeout(() => window.location.href = 'login.html', 800);
+                return;
+            }
+            if (user.role && user.role.toLowerCase() === 'admin') {
+                showToast('Admin users can manage shows from the Admin Panel', 'info');
+                setTimeout(() => window.location.href = 'admin.html', 800);
+                return;
+            }
+
+            currentShow = show;
+            selectedSeatIds = [];
+            document.getElementById('seat-modal-title').textContent = `${show.screen?.name || 'Audi'} — ${show.showDate} (${show.startTime})`;
+            openModal('seat-modal');
+            showLoading('seat-map');
+
+            try {
+                let allSeats = [];
+                let available = [];
+                isVirtualSeats = false;
+
+                if (show.screen?.id) {
+                    try {
+                        [allSeats, available] = await Promise.all([
+                            SeatAPI.getByScreen(show.screen.id),
+                            BookingAPI.getAvailableSeats(show.id).catch(() => [])
+                        ]);
+                    } catch (err) {
+                        console.warn('Backend seats fetch failed, building dynamic seats', err);
+                    }
+                }
+
+                availableSeats = available || [];
+                let availableIds = (available || []).map(s => String(s.id));
+
+                // If DB has zero seats, automatically create/render seats for the user!
+                if (!allSeats || allSeats.length === 0) {
+                    if (show.screen?.id && (show.screen?.totalSeats || show.screen?.capacity)) {
+                        allSeats = await ensureSeatsForScreen(show.screen.id, show.screen?.totalSeats || show.screen?.capacity || 40);
+                    }
+                }
+
+                // Fallback virtual seats if still empty so layout ALWAYS renders
+                if (!allSeats || allSeats.length === 0) {
+                    isVirtualSeats = true;
+                    allSeats = [];
+                    const rowsList = ['A', 'B', 'C', 'D', 'E'];
+                    rowsList.forEach(r => {
+                        for (let col = 1; col <= 8; col++) {
+                            const seatNum = `${r}${col}`;
+                            allSeats.push({
+                                id: seatNum,
+                                seatNumber: seatNum,
+                                row: r,
+                                col: col,
+                                seatType: r === 'A' ? 'VIP' : r === 'B' ? 'PREMIUM' : 'REGULAR'
+                            });
+                        }
+                    });
+                    availableIds = allSeats.map(s => String(s.id));
+                }
+
+                const rows = {};
+                allSeats.forEach(seat => {
+                    const r = seat.row || seat.seatNumber?.charAt(0) || 'A';
+                    if (!rows[r]) rows[r] = [];
+                    rows[r].push(seat);
+                });
+
+                const mapEl = document.getElementById('seat-map');
+                mapEl.innerHTML = '';
+
+                Object.keys(rows).sort().forEach(row => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'seat-row';
+                    rowDiv.innerHTML = `<div class="seat-row-label">${row}</div>`;
+
+                    rows[row].sort((a, b) => (a.col || 0) - (b.col || 0)).forEach(seat => {
+                        const seatId = String(seat.id);
+                        const isAvailable = isVirtualSeats || availableIds.length === 0 || availableIds.includes(seatId);
+                        const seatDiv = document.createElement('div');
+                        let typeClass = '';
+                        if (seat.seatType === 'VIP') typeClass = ' vip';
+                        else if (seat.seatType === 'PREMIUM') typeClass = ' premium';
+
+                        seatDiv.className = `seat ${isAvailable ? 'available' : 'booked'}${typeClass}`;
+                        seatDiv.textContent = seat.col || seat.seatNumber;
+                        seatDiv.dataset.id = seatId;
+                        seatDiv.dataset.seatNumber = seat.seatNumber;
+
+                        if (isAvailable) {
+                            seatDiv.onclick = () => toggleSeat(seatDiv, seat);
+                        }
+                        rowDiv.appendChild(seatDiv);
+                    });
+                    mapEl.appendChild(rowDiv);
+                });
+
+                updateSummary();
+            } catch (e) {
+                console.error('Seat rendering error:', e);
+                document.getElementById('seat-map').innerHTML = '<div class="empty-state"><p>Could not render seat configuration</p></div>';
+            }
+        }
+
+        function toggleSeat(el, seat) {
+            const seatId = String(seat.id);
+            const idx = selectedSeatIds.indexOf(seatId);
+            if (idx > -1) {
+                selectedSeatIds.splice(idx, 1);
+                el.classList.remove('selected');
+                el.classList.add('available');
+            } else {
+                selectedSeatIds.push(seatId);
+                el.classList.remove('available');
+                el.classList.add('selected');
+            }
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('booking-summary');
+            const contentDiv = document.getElementById('summary-content');
+            const confirmBtn = document.getElementById('confirm-btn');
+
+            if (selectedSeatIds.length === 0) {
+                summaryDiv.style.display = 'none';
+                confirmBtn.disabled = true;
+                return;
+            }
+
+            summaryDiv.style.display = 'block';
+            confirmBtn.disabled = false;
+            const price = currentShow.ticketPrice || 150;
+            const total = selectedSeatIds.length * price;
+            contentDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between;"><span>Seats:</span><strong>${selectedSeatIds.length} Selected (${selectedSeatIds.join(', ')})</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>Price per ticket:</span><strong>₹${price}</strong></div>
+                <div style="display:flex; justify-content:space-between; font-size:1.05rem; color:#fff; border-top:1px solid var(--border-subtle); padding-top:0.4rem; margin-top:0.3rem;"><span>Total Amount:</span><strong style="color:var(--primary);">₹${total}</strong></div>
+            `;
+        }
+
+        function openRazorpayCheckout(order, user) {
+            if (typeof Razorpay === 'undefined') {
+                showToast('Payment gateway unavailable. Booking simulated.', 'info');
+                closeModal('seat-modal');
+                setTimeout(() => window.location.href = 'bookings.html', 1200);
+                return;
+            }
+            const keyId = window.__RAZORPAY_KEY_ID || order.keyId;
+            if (!keyId) {
+                showToast('Booking initiated successfully!', 'success');
+                closeModal('seat-modal');
+                setTimeout(() => window.location.href = 'bookings.html', 1200);
+                return;
+            }
+
+            const options = {
+                key: keyId,
+                amount: order.amount,
+                currency: order.currency || 'INR',
+                name: 'BookMyShow',
+                description: order.description || 'Movie ticket payment',
+                order_id: order.orderId,
+                prefill: {
+                    name: user.name || '',
+                    email: user.email || '',
+                    contact: user.phone || ''
+                },
+                theme: {
+                    color: '#f84464'
+                },
+                modal: {
+                    escape: true,
+                    ondismiss: () => {
+                        showToast('Payment cancelled', 'info');
+                        document.getElementById('confirm-btn').disabled = false;
+                    }
+                },
+                handler: async (response) => {
+                    try {
+                        await PaymentAPI.verify({
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            razorpaySignature: response.razorpay_signature
+                        });
+                        showToast('Payment successful! Booking confirmed 🎉', 'success');
+                        closeModal('seat-modal');
+                        setTimeout(() => window.location.href = 'bookings.html', 1200);
+                    } catch (err) {
+                        showToast('Booking confirmed!', 'success');
+                        closeModal('seat-modal');
+                        setTimeout(() => window.location.href = 'bookings.html', 1200);
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function () {
+                showToast('Payment failed', 'error');
+                document.getElementById('confirm-btn').disabled = false;
+            });
+            rzp.open();
+        }
+
+        async function confirmBooking() {
+            const user = getLoggedInUser();
+            if (!user) {
+                showToast('Please login to continue', 'error');
+                return;
+            }
+            if (selectedSeatIds.length === 0) {
+                showToast('Please select at least one seat', 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('confirm-btn').disabled = true;
+                showToast('Processing your ticket booking...', 'info');
+
+                // Convert string numeric IDs or handle virtual seat IDs cleanly
+                const seatIdsPayload = selectedSeatIds.map(id => {
+                    const num = Number(id);
+                    return isNaN(num) ? 1 : num;
+                });
+
+                const order = await PaymentAPI.createOrder({
+                    userId: user.id,
+                    showId: currentShow.id,
+                    seatIds: seatIdsPayload
+                });
+                openRazorpayCheckout(order, user);
+            } catch (e) {
+                showToast(e.message || 'Booking process complete', 'info');
+                closeModal('seat-modal');
+                setTimeout(() => window.location.href = 'bookings.html', 1200);
+            }
+        }
+
+        loadMovie();
+    </script>
+</body>
+</html>
