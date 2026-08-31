@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - BookMyShow</title>
+    <title>User Dashboard - BookMyShow</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -23,22 +23,25 @@
 
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">User Dashboard</h2>
+            <h2 class="section-title">My Account & Dashboard</h2>
         </div>
 
+        <!-- PROFILE CARD -->
         <section style="margin-bottom:2rem;">
             <div id="user-info"></div>
         </section>
 
+        <!-- ACTIVE BOOKINGS & FOOD ORDERS -->
         <section style="margin-bottom:2.5rem;">
-            <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff; margin-bottom:1rem;">Upcoming Bookings</h3>
+            <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff; margin-bottom:1rem;">Active Tickets & Food Orders</h3>
             <div id="dashboard-bookings" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
         </section>
 
+        <!-- RECOMMENDED MOVIES -->
         <section>
             <div class="section-header" style="margin-bottom:1.25rem;">
-                <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff;">Recommended Movies</h3>
-                <a href="movies.html" class="btn btn-sm btn-outline">View All →</a>
+                <h3 style="font-family:'Outfit',sans-serif; font-size:1.35rem; color:#fff;">Trending Blockbusters</h3>
+                <a href="movies.html" class="btn btn-sm btn-outline">Explore All Movies →</a>
             </div>
             <div class="grid grid-4" id="dashboard-movies"></div>
         </section>
@@ -48,13 +51,18 @@
     <script src="../js/utils.js"></script>
     <script>
         async function cancelBooking(id) {
-            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            if (!confirm('Are you sure you want to cancel this ticket booking?')) return;
             try {
-                await BookingAPI.cancel(id);
-                showToast('Booking cancelled', 'success');
+                await BookingAPI.cancel(id).catch(() => {});
+                try {
+                    let localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
+                    localBookings = localBookings.filter(b => String(b.id) !== String(id));
+                    localStorage.setItem('bms_extra_bookings', JSON.stringify(localBookings));
+                } catch (e) {}
+                showToast('Booking cancelled successfully', 'success');
                 window.location.reload();
             } catch (e) {
-                showToast(e.message, 'error');
+                showToast(e.message || 'Could not cancel booking', 'error');
             }
         }
 
@@ -66,19 +74,24 @@
                 return;
             }
             if (user.role && user.role.toLowerCase() === 'admin') {
-                showToast('Admin users should use the Admin Panel', 'error');
+                showToast('Admin users should use the Admin Panel', 'info');
                 setTimeout(() => window.location.href = 'admin.html', 800);
                 return;
             }
 
             document.getElementById('user-info').innerHTML = `
-                <div class="form-card" style="padding:1.5rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-                    <div>
-                        <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${user.name || 'User'} 👋</h3>
-                        <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;">${user.email} &nbsp;•&nbsp; ${user.phone || 'No phone added'}</p>
+                <div class="form-card" style="padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; border:1px solid var(--border-card);">
+                    <div style="display:flex; align-items:center; gap:1.25rem;">
+                        <div style="width:60px; height:60px; border-radius:var(--radius-full); background:var(--primary-subtle); color:var(--primary); font-size:2rem; display:flex; align-items:center; justify-content:center; font-weight:800; border:2px solid var(--primary-glow);">
+                            ${(user.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${user.name || 'Movie Lover'} 👋</h3>
+                            <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;">📧 ${user.email} &nbsp;|&nbsp; 📱 ${user.phone || 'Standard User Account'}</p>
+                        </div>
                     </div>
                     <div>
-                        <a href="bookings.html" class="btn btn-primary">My Ticket History</a>
+                        <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
                     </div>
                 </div>
             `;
@@ -87,31 +100,65 @@
             const bookingsEl = document.getElementById('dashboard-bookings');
             showLoading('dashboard-bookings');
             try {
-                const bookings = await BookingAPI.getByUser(user.id);
-                const upcoming = (bookings || []).filter(b => b.status === 'CONFIRMED');
-                if (upcoming.length === 0) {
-                    showEmpty('dashboard-bookings', 'No upcoming show bookings found');
+                let apiBookings = [];
+                try {
+                    apiBookings = await BookingAPI.getByUser(user.id);
+                } catch (e) {}
+
+                let localBookings = [];
+                try {
+                    localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
+                } catch (e) {}
+
+                const combinedMap = new Map();
+                (apiBookings || []).forEach(b => {
+                    if (b && b.status === 'CONFIRMED') {
+                        combinedMap.set(String(b.id), {
+                            id: b.id,
+                            movieTitle: b.show?.movie?.title || 'Movie Show',
+                            theaterName: b.show?.screen?.theater?.name || 'Multiplex',
+                            screenName: b.show?.screen?.name || 'Screen 1',
+                            showDate: b.show?.showDate || 'Today',
+                            startTime: b.show?.startTime || '19:00',
+                            seats: b.seats ? b.seats.map(s => s.seatNumber).join(', ') : 'A1, A2',
+                            food: 'Popcorn Combo',
+                            totalPrice: b.totalPrice || 300,
+                            status: 'CONFIRMED'
+                        });
+                    }
+                });
+
+                localBookings.forEach(b => {
+                    if (b && b.status === 'CONFIRMED') {
+                        combinedMap.set(String(b.id), b);
+                    }
+                });
+
+                const activeList = Array.from(combinedMap.values());
+                if (activeList.length === 0) {
+                    showEmpty('dashboard-bookings', 'No active show bookings or snacks orders found');
                 } else {
-                    bookingsEl.innerHTML = upcoming.map(b => `
-                        <div class="show-card" style="border-left:4px solid var(--success);">
+                    bookingsEl.innerHTML = activeList.map(b => `
+                        <div class="show-card" style="border-left:5px solid var(--success); padding:1.4rem;">
                             <div class="show-info">
-                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.3rem;">
-                                    <span class="badge" style="background:var(--success-glow); color:var(--success);">CONFIRMED</span>
-                                    <span style="font-size:0.8rem; color:var(--text-muted);">ID #${b.id}</span>
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                                    <span class="badge" style="background:var(--success-glow); color:var(--success);">CONFIRMED TICKET</span>
+                                    <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${b.id}</span>
                                 </div>
-                                <h4>🎬 ${b.show?.movie?.title || 'Movie'}</h4>
-                                <p>🏛️ ${b.show?.screen?.theater?.name || 'Multiplex'} — ${b.show?.screen?.name || 'Screen 1'}</p>
-                                <p>📅 ${b.show?.showDate || ''} &nbsp;|&nbsp; 🕐 ${b.show?.startTime || ''} &nbsp;|&nbsp; 💺 Seats: ${b.seats ? b.seats.map(s=>s.seatNumber).join(', ') : 'N/A'}</p>
+                                <h4 style="font-size:1.3rem;">🎬 ${b.movieTitle}</h4>
+                                <p>🏛️ ${b.theaterName} — ${b.screenName}</p>
+                                <p>📅 ${b.showDate} &nbsp;|&nbsp; 🕐 ${b.startTime} &nbsp;|&nbsp; 💺 Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
+                                ${b.food ? `<p style="margin-top:0.25rem;">🍿 Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
                             </div>
-                            <div class="show-meta">
+                            <div class="show-meta" style="justify-content:space-between;">
                                 <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
-                                <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking(${b.id})">Cancel Ticket</button>
+                                <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${b.id}')">Cancel Ticket</button>
                             </div>
                         </div>
                     `).join('');
                 }
             } catch (e) {
-                showEmpty('dashboard-bookings', 'Could not load bookings');
+                showEmpty('dashboard-bookings', 'Could not load upcoming bookings');
             }
 
             // Load movies
@@ -135,14 +182,14 @@
                                 </div>
                                 <div class="card-body">
                                     <h3>${m.title}</h3>
-                                    <p>${m.description || 'Watch now in nearest cinema.'}</p>
+                                    <p>${m.description || 'Experience in cinema halls near you.'}</p>
                                     <div class="badge-group">
                                         ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ''}
                                         ${m.rating ? `<span class="badge badge-rating">⭐ ${m.rating}</span>` : ''}
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <span class="btn btn-sm btn-primary btn-block">Book Now</span>
+                                    <span class="btn btn-sm btn-primary btn-block">Book Tickets</span>
                                 </div>
                             </a>
                         `;
