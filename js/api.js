@@ -39,7 +39,7 @@ async function apiPost(endpoint, data) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-    }));
+    });
     if (!res.ok) {
         const rawBody = await res.text().catch(() => '');
         try {
@@ -80,7 +80,7 @@ async function apiPut(endpoint, data) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-    }));
+    });
     if (!res.ok) {
         const rawBody = await res.text().catch(() => '');
         throw new Error(rawBody || res.statusText || 'Update failed');
