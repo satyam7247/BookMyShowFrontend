@@ -12,7 +12,7 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <a href="../index.html" class="logo">Book<span>My</span>Show</a>
-        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav(event)" aria-label="Toggle menu"><span class="hamburger"></span></button>
         <div class="nav-links">
             <a href="../index.html">Home</a>
             <a href="movies.html">Movies</a>
@@ -67,6 +67,7 @@
             <button class="tab" onclick="switchTab('screens', this)"><i class="fa-solid fa-desktop"></i> Screens</button>
             <button class="tab" onclick="switchTab('seats', this)"><i class="fa-solid fa-couch"></i> Seats</button>
             <button class="tab" onclick="switchTab('shows', this)"><i class="fa-solid fa-calendar-check"></i> Shows</button>
+            <button class="tab" onclick="switchTab('bookings', this)"><i class="fa-solid fa-receipt"></i> Bookings</button>
         </div>
 
         <!-- ===== CITIES TAB ===== -->
@@ -110,7 +111,7 @@
                         <input type="number" id="movie-duration" placeholder="148">
                     </div>
                     <div class="form-group" style="flex:1;min-width:100px;margin:0;">
-                        <label>Rating ⭐</label>
+                        <label>Rating <i class="fa-solid fa-star" style="color:var(--accent);"></i></label>
                         <input type="number" step="0.1" id="movie-rating" placeholder="8.8">
                     </div>
                     <div class="form-group" style="flex:1;min-width:140px;margin:0;">
@@ -215,7 +216,7 @@
                     </div>
                     <button class="btn btn-primary" onclick="addSeats()">+ Add Seats</button>
                 </div>
-                <p style="color:var(--text-muted); font-size:0.82rem; margin-top:0.75rem;">💡 Auto-generates seat numbers e.g. A1 to A10 for the specified screen.</p>
+                <p style="color:var(--text-muted); font-size:0.82rem; margin-top:0.75rem;"><i class="fa-solid fa-lightbulb" style="color:var(--accent);"></i> Auto-generates seat numbers e.g. A1 to A10 for the specified screen.</p>
             </div>
             <div id="seats-table"></div>
         </div>
@@ -254,6 +255,70 @@
             </div>
             <div id="shows-table"></div>
                 </div>
+
+        <!-- ===== BOOKINGS TAB ===== -->
+        <div id="tab-bookings" class="tab-content" style="display:none;">
+            <div class="admin-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="total-bookings">0</div>
+                        <div class="stat-label">Total Bookings</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-calendar-day"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="today-bookings">0</div>
+                        <div class="stat-label">Booked Today</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="confirmed-bookings">0</div>
+                        <div class="stat-label">Confirmed</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="pending-bookings">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card" style="margin-bottom:1.25rem;">
+                <h3 style="font-family:'Outfit',sans-serif; margin-bottom:1rem; color:var(--text-main);">Booking History</h3>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+                    <div class="form-group" style="flex:2;min-width:220px;margin:0;">
+                        <label>Search User</label>
+                        <input type="search" id="booking-user-search" placeholder="Name or email" oninput="searchBookingsByUser()">
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:160px;margin:0;">
+                        <label>Status</label>
+                        <select id="booking-status-filter" onchange="loadBookingsHistory()">
+                            <option value="">All Statuses</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:160px;margin:0;">
+                        <label>Date Range</label>
+                        <select id="booking-date-filter" onchange="loadBookingsHistory()">
+                            <option value="">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive" id="bookings-table"></div>
+        </div>
     </div>
 
     <!-- GENERIC ADMIN MODAL -->
@@ -333,7 +398,7 @@
                 movies.forEach(m => html += `<tr>
                     <td>#${m.id}</td><td><strong>${m.title}</strong></td><td><span class="badge badge-genre">${m.genre || 'General'}</span></td>
                     <td><span class="badge badge-lang">${m.language || 'Multi'}</span></td><td>${m.durationMinutes ? m.durationMinutes + 'm' : 'N/A'}</td>
-                    <td><span class="badge badge-rating">⭐ ${m.rating || 'N/A'}</span></td>
+                    <td><span class="badge badge-rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating || 'N/A'}</span></td>
                     <td><button class="btn btn-sm btn-outline" onclick="editMovie(${m.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteMovie(${m.id})">Delete</button></td>
                 </tr>`);
                 html += '</tbody></table></div>';
@@ -654,7 +719,7 @@
                 
                 const statusFilter = document.getElementById('booking-status-filter')?.value;
                 if (statusFilter) {
-                    filteredBookings = filteredBookings.filter(b => b.paymentStatus === statusFilter);
+                    filteredBookings = filteredBookings.filter(b => (b.paymentStatus || b.status) === statusFilter);
                 }
 
                 const dateFilter = document.getElementById('booking-date-filter')?.value;
@@ -683,21 +748,39 @@
         function updateBookingStats(bookings) {
             const today = new Date().toDateString();
             const totalBookings = bookings.length;
-            const todayBookings = bookings.filter(b => new Date(b.createdAt || b.bookingDate).toDateString() === today).length;
-            const confirmedBookings = bookings.filter(b => b.paymentStatus === 'CONFIRMED').length;
-            const pendingBookings = bookings.filter(b => b.paymentStatus === 'PENDING').length;
+            const todayBookings = bookings.filter(b => {
+                const date = new Date(b.createdAt || b.bookingDate || b.bookedAt || 0);
+                return !isNaN(date) && date.toDateString() === today;
+            }).length;
+            const confirmedBookings = bookings.filter(b => (b.paymentStatus || b.status) === 'CONFIRMED').length;
+            const pendingBookings = bookings.filter(b => (b.paymentStatus || b.status || 'PENDING') === 'PENDING').length;
 
-            document.getElementById('total-bookings').textContent = totalBookings;
-            document.getElementById('today-bookings').textContent = todayBookings;
-            document.getElementById('confirmed-bookings').textContent = confirmedBookings;
-            document.getElementById('pending-bookings').textContent = pendingBookings;
+            const stats = {
+                'total-bookings': totalBookings,
+                'today-bookings': todayBookings,
+                'confirmed-bookings': confirmedBookings,
+                'pending-bookings': pendingBookings
+            };
+            Object.entries(stats).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            });
+        }
+
+        function formatBookingSeats(seats) {
+            if (!seats) return 'N/A';
+            if (Array.isArray(seats)) {
+                return seats.map(seat => seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`).filter(Boolean).join(', ') || 'N/A';
+            }
+            return seats;
         }
 
         function renderBookingsTable(bookings) {
             const container = document.getElementById('bookings-table');
+            if (!container) return;
             
             if (bookings.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>📭 No bookings found</p></div>';
+                container.innerHTML = '<div class="empty-state"><p><i class="fa-solid fa-inbox"></i> No bookings found</p></div>';
                 return;
             }
 
@@ -705,13 +788,13 @@
                 <thead>
                     <tr>
                         <th>Booking ID</th>
-                        <th>👤 User</th>
+                        <th><i class="fa-solid fa-user"></i> User</th>
                         <th><span style="color:var(--primary);">▶</span> Movie</th>
                         <th><span style="color:var(--primary);">●</span> Theater</th>
                         <th><span style="color:var(--primary);">■</span> Show Date</th>
                         <th><span style="color:var(--primary);">◻</span> Seats</th>
-                        <th>💰 Total Price</th>
-                        <th>💳 Payment Status</th>
+                        <th><i class="fa-solid fa-sack-dollar"></i> Total Price</th>
+                        <th><i class="fa-solid fa-credit-card"></i> Payment Status</th>
                         <th><span style="color:var(--primary);">■</span> Booked On</th>
                         <th>Actions</th>
                     </tr>
@@ -723,14 +806,14 @@
                 const show = booking.show || {};
                 const movie = show.movie || {};
                 const theater = show.screen?.theater || {};
-                const seats = booking.seatNumbers || booking.seats || 'N/A';
+                const seats = formatBookingSeats(booking.seatNumbers || booking.seats);
                 const bookingDate = new Date(booking.createdAt || booking.bookingDate);
-                const status = booking.paymentStatus || 'PENDING';
+                const status = booking.paymentStatus || booking.status || 'PENDING';
                 const statusBadge = status === 'CONFIRMED' 
-                    ? '<span class="badge badge-success">✅ Confirmed</span>'
+                    ? '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Confirmed</span>'
                     : status === 'CANCELLED'
-                    ? '<span class="badge badge-danger">❌ Cancelled</span>'
-                    : '<span class="badge badge-warning">⏳ Pending</span>';
+                    ? '<span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> Cancelled</span>'
+                    : '<span class="badge badge-warning"><i class="fa-solid fa-hourglass-half"></i> Pending</span>';
 
                 html += `<tr>
                     <td><strong>#${booking.id}</strong></td>
@@ -789,36 +872,37 @@
             const screen = show.screen || {};
             const status = booking.paymentStatus || 'PENDING';
             const bookingDate = new Date(booking.createdAt || booking.bookingDate);
+            const seats = formatBookingSeats(booking.seatNumbers || booking.seats);
             
             const details = `
             <div style="text-align:left; line-height:1.6;">
-                <h3 style="margin-bottom:1.25rem; color:var(--primary); font-family:'Outfit', sans-serif;">📋 Booking Details - #${booking.id}</h3>
+                <h3 style="margin-bottom:1.25rem; color:var(--primary); font-family:'Outfit', sans-serif;"><i class="fa-solid fa-clipboard-list"></i> Booking Details - #${booking.id}</h3>
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem;">
                     <div>
-                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">👤 User Information</h4>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-user"></i> User Information</h4>
                         <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
                         <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
                         <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
                     </div>
 
                     <div>
-                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">🎬 Movie Details</h4>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-clapperboard"></i> Movie Details</h4>
                         <p><strong>Title:</strong> ${movie.title || 'N/A'}</p>
                         <p><strong>Genre:</strong> ${movie.genre || 'N/A'}</p>
                         <p><strong>Language:</strong> ${movie.language || 'N/A'}</p>
                     </div>
 
                     <div>
-                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">🏛️ Show Details</h4>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-building-columns"></i> Show Details</h4>
                         <p><strong>Theater:</strong> ${theater.name || 'N/A'}</p>
                         <p><strong>Screen:</strong> ${screen.name || 'N/A'}</p>
                         <p><strong>Timing:</strong> ${show.showDate || ''} ${show.startTime || ''}</p>
                     </div>
 
                     <div>
-                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">💳 Payment & Seats</h4>
-                        <p><strong>Seats:</strong> <span class="badge badge-info">${booking.seatNumbers || booking.seats || 'N/A'}</span></p>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-credit-card"></i> Payment & Seats</h4>
+                        <p><strong>Seats:</strong> <span class="badge badge-info">${seats}</span></p>
                         <p><strong>Total Price:</strong> <strong style="color:var(--success);">₹${booking.totalPrice || 0}</strong></p>
                         <p><strong>Status:</strong> ${status}</p>
                     </div>

@@ -47,6 +47,7 @@ function updateNavUser() {
     
     // Clear existing mobile user section if any
     navLinks?.querySelector('.mobile-user-section')?.remove();
+    ensureCoreNavLinks(navLinks);
     
     const adminLink = userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-sm btn-primary">Admin Panel</a>` : '';
     const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-sm btn-outline">Dashboard</a>` : '';
@@ -77,7 +78,7 @@ function updateNavUser() {
                 ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-outline btn-block">Dashboard</a>` : ''}
                 <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
             `;
-            navLinks.prepend(mobileSection);
+            navLinks.appendChild(mobileSection);
         }
     } else {
         const loginButtons = `
@@ -94,8 +95,20 @@ function updateNavUser() {
                 <a href="${getPagePath('pages/login.html')}" class="btn btn-outline btn-block">Login</a>
                 <a href="${getPagePath('pages/register.html')}" class="btn btn-primary btn-block">Sign Up</a>
             `;
-            navLinks.prepend(mobileSection);
+            navLinks.appendChild(mobileSection);
         }
+    }
+}
+
+function ensureCoreNavLinks(navLinks) {
+    if (!navLinks) return;
+    const hasMovies = Array.from(navLinks.querySelectorAll('a'))
+        .some(a => (a.getAttribute('href') || '').includes('movies.html'));
+    if (!hasMovies) {
+        const moviesLink = document.createElement('a');
+        moviesLink.href = getPagePath('pages/movies.html');
+        moviesLink.textContent = 'Movies';
+        navLinks.appendChild(moviesLink);
     }
 }
 
@@ -272,7 +285,7 @@ function showEmpty(containerId, message = 'No data found') {
     if (el) {
         el.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-card); animation: fadeIn 0.4s ease;">
-                <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--primary-glow));">🎬</div>
+                <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--primary-glow));"><i class="fa-solid fa-clapperboard" style="color:var(--primary);"></i></div>
                 <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.5rem;">${message}</h3>
                 <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 460px; margin: 0 auto 1.5rem;">No records found. You can add new entries from the Admin Panel.</p>
             </div>
@@ -297,12 +310,23 @@ document.addEventListener('click', (e) => {
 });
 
 // ===== MOBILE NAV =====
-function toggleNav() {
-    document.querySelector('.nav-links')?.classList.toggle('open');
+function toggleNav(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const navLinks = document.querySelector('.nav-links');
+    const navToggle = document.getElementById('nav-toggle');
+    if (!navLinks) return;
+
+    const isOpen = navLinks.classList.toggle('open');
+    navToggle?.classList.toggle('open', isOpen);
+    navToggle?.setAttribute('aria-expanded', String(isOpen));
 }
 
 function closeNav() {
     document.querySelector('.nav-links')?.classList.remove('open');
+    const navToggle = document.getElementById('nav-toggle');
+    navToggle?.classList.remove('open');
+    navToggle?.setAttribute('aria-expanded', 'false');
 }
 
 window.addEventListener('resize', () => {
@@ -314,6 +338,10 @@ window.addEventListener('resize', () => {
 document.addEventListener('click', (e) => {
     if (e.target.closest('.nav-links a')) {
         closeNav();
+        return;
+    }
+    if (!e.target.closest('.navbar')) {
+        closeNav();
     }
 });
 
@@ -321,4 +349,6 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     updateNavUser();
     updateNavLinksForRole();
+    const navToggle = document.getElementById('nav-toggle');
+    navToggle?.setAttribute('aria-expanded', 'false');
 });

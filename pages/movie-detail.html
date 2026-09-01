@@ -12,7 +12,7 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <a href="../index.html" class="logo">Book<span>My</span>Show</a>
-        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav(event)" aria-label="Toggle menu"><span class="hamburger"></span></button>
         <div class="nav-links">
             <a href="../index.html">Home</a>
             <a href="movies.html" class="active">Movies</a>
@@ -128,7 +128,7 @@
             </div>
 
             <button class="btn btn-primary btn-block" style="margin-top:1.25rem; padding:0.85rem;" id="confirm-btn" onclick="confirmBooking()" disabled>
-                💳 Pay & Confirm Booking
+                <i class="fa-solid fa-credit-card"></i> Pay & Confirm Booking
             </button>
         </div>
     </div>
@@ -437,7 +437,7 @@
                     }
                 },
                 handler: async function (response) {
-                    showToast('💳 Payment Received! Finalizing ticket confirmation...', 'success');
+                    showToast('<i class="fa-solid fa-credit-card"></i> Payment Received! Finalizing ticket confirmation...', 'success');
                     await finalizeBookingAfterPayment(response.razorpay_payment_id || 'PAY_' + Date.now());
                 }
             };
@@ -505,7 +505,7 @@
                 localStorage.setItem('bms_extra_bookings', JSON.stringify(localBookings));
             } catch (e) {}
 
-            showToast('🎉 Booking & Payment Confirmed Successfully!', 'success');
+            showToast('<i class="fa-solid fa-circle-check"></i> Booking & Payment Confirmed Successfully!', 'success');
             closeModal('seat-modal');
             setTimeout(() => window.location.href = 'bookings.html', 1000);
         }

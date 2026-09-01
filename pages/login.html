@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - BookMyShow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <nav class="navbar">
         <a href="../index.html" class="logo">Book<span>My</span>Show</a>
-        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav(event)" aria-label="Toggle menu"><span class="hamburger"></span></button>
         <div class="nav-links">
             <a href="../index.html">Home</a>
             <a href="movies.html">Movies</a>
@@ -22,7 +23,7 @@
     <div class="auth-wrapper">
         <div class="auth-card">
             <div class="auth-header">
-                <h2>Welcome Back 👋</h2>
+                <h2>Welcome Back <i class="fa-solid fa-hand"></i></h2>
                 <p>Sign in to access your movie bookings & admin controls</p>
             </div>
             

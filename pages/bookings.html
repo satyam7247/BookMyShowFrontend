@@ -12,7 +12,7 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <a href="../index.html" class="logo">Book<span>My</span>Show</a>
-        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
+        <button class="nav-toggle" id="nav-toggle" onclick="toggleNav(event)" aria-label="Toggle menu"><span class="hamburger"></span></button>
         <div class="nav-links">
             <a href="../index.html">Home</a>
             <a href="movies.html">Movies</a>
@@ -77,7 +77,7 @@
             if (!user) {
                 document.getElementById('bookings-list').innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">🔐</div>
+                        <div class="icon"><i class="fa-solid fa-lock" style="color:var(--primary);"></i></div>
                         <p>Please <a href="login.html" style="color:var(--primary);font-weight:700;">login</a> to view your bookings.</p>
                     </div>`;
                 return;
@@ -95,7 +95,7 @@
                 const visible = (bookings || []).filter(b => String(b.status || '').toUpperCase() !== 'CANCELLED');
 
                 if (!visible.length) {
-                    showEmpty('bookings-list', 'No bookings yet. Go book some movies! 🎬');
+                    showEmpty('bookings-list', 'No bookings yet. Go book some movies! <i class="fa-solid fa-clapperboard"></i>');
                     return;
                 }
 
