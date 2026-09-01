@@ -18,67 +18,9 @@ function resolveApiBase() {
 
 const API = resolveApiBase();
 
-// Helper to alert user if Render backend is cold-starting
-let warmupToastShown = false;
-let warmupToastTimer = null;
-
-function showWarmupToast() {
-    if (warmupToastShown) return;
-    warmupToastShown = true;
-    if (typeof showToast === 'function') {
-        showToast('⏳ Server is waking up... Render free tier cold start (~30s)', 'info');
-    }
-}
-
-function notifyIfSlow(promise) {
-    // Show warmup toast after 3 seconds of waiting (indicates cold start)
-    if (warmupToastTimer) clearTimeout(warmupToastTimer);
-    warmupToastTimer = setTimeout(showWarmupToast, 3000);
-    
-    return promise.finally(() => {
-        if (warmupToastTimer) clearTimeout(warmupToastTimer);
-    });
-}
-
-// ===== BACKEND WARMUP (prevent cold start on page load) =====
-let _warmupPromise = null;
-
-function warmupBackend() {
-    if (_warmupPromise) return _warmupPromise;
-    
-    warmupToastShown = false;
-    _warmupPromise = fetch(`${API}/actuator/health`, { 
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-    })
-    .then(r => r.ok)
-    .catch(() => {
-        // Fallback: try root endpoint if actuator not available
-        return fetch(`${API.replace('/api', '')}/`, { method: 'HEAD' })
-            .then(r => r.ok)
-            .catch(() => false);
-    })
-    .then(ok => {
-        if (ok && typeof showToast === 'function') {
-            showToast('✅ Server ready!', 'success');
-        }
-        return ok;
-    });
-    
-    return _warmupPromise;
-}
-
-// Auto-warmup on page load
-if (typeof window !== 'undefined') {
-    // Small delay to not block initial render
-    setTimeout(warmupBackend, 100);
-    // Expose globally for pages to trigger warmup manually
-    window.warmupBackend = warmupBackend;
-}
-
 // ===== GENERIC FETCH HELPERS =====
 async function apiGet(endpoint) {
-    const res = await notifyIfSlow(fetch(`${API}${endpoint}`));
+    const res = await fetch(`${API}${endpoint}`);
     if (!res.ok) {
         let errText = await res.text().catch(() => res.statusText);
         try {
@@ -93,7 +35,7 @@ async function apiGet(endpoint) {
 }
 
 async function apiPost(endpoint, data) {
-    const res = await notifyIfSlow(fetch(`${API}${endpoint}`, {
+    const res = await fetch(`${API}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -134,7 +76,7 @@ async function apiPostFallback(endpoints, data) {
 }
 
 async function apiPut(endpoint, data) {
-    const res = await notifyIfSlow(fetch(`${API}${endpoint}`, {
+    const res = await fetch(`${API}${endpoint}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -146,10 +88,22 @@ async function apiPut(endpoint, data) {
     return res.text().then(text => text ? JSON.parse(text) : null).catch(() => null);
 }
 
+async function apiPutFallback(endpoints, data) {
+    let lastError;
+    for (const ep of endpoints) {
+        try {
+            return await apiPut(ep, data);
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw lastError || new Error('All candidate endpoints failed');
+}
+
 async function apiDelete(endpoint) {
-    const res = await notifyIfSlow(fetch(`${API}${endpoint}`, {
+    const res = await fetch(`${API}${endpoint}`, {
         method: 'DELETE'
-    }));
+    });
     if (!res.ok) {
         let errText = await res.text().catch(() => res.statusText);
         try {
@@ -172,7 +126,7 @@ const MovieAPI = {
     getAll: () => apiGet('/movies'),
     getById: (id) => apiGet(`/movies/${id}`),
     add: (data) => apiPostFallback(['/movies', '/movies/add'], data),
-    update: (id, data) => apiPut(`/movies/${id}`, data),
+    update: (id, data) => apiPutFallback([`/movies/${id}`, `/movies/update/${id}`, `/movies/${id}/update`], data),
     delete: (id) => apiDelete(`/movies/${id}`)
 };
 
