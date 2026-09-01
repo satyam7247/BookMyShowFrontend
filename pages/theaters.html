@@ -84,6 +84,7 @@
             const grid = document.getElementById('theaters-grid');
             if (!theaters || theaters.length === 0) { showEmpty('theaters-grid', 'No cinema theaters available'); return; }
             grid.innerHTML = theaters.map(t => `
+<<<<<<< HEAD
                 <div class="card" style="padding:0;">
                     <div class="card-body" style="padding:1.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
@@ -94,6 +95,13 @@
                             </div>
                         </div>
                         <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:1rem;">${t.address || 'Premium multiplex audio & 4K laser projection screening.'}</p>
+=======
+                <div class="card">
+                    <div class="card-body">
+                        <h3><span style="color:var(--primary);">⌂</span> ${t.name}</h3>
+                        <p>📍 ${t.address || 'N/A'}</p>
+                        <p>🌆 ${t.city?.name || ''}, ${t.city?.state || ''}</p>
+>>>>>>> 50da209 (uixi)
                     </div>
                     <div class="card-footer">
                         <button class="btn btn-sm btn-outline btn-block" onclick="viewScreens(${t.id}, '${t.name}')">View Screens & Specs</button>

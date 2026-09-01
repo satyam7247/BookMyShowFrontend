@@ -565,6 +565,236 @@
         // ===== INIT =====
         async function init() {
             await Promise.all([loadCities(), loadMovies(), loadTheaters(), loadScreens(), loadShows()]);
+<<<<<<< HEAD
+=======
+            await loadBookingsHistory();
+        }
+
+        // ===== BOOKINGS HISTORY =====
+        let allBookings = [];
+
+        async function loadBookingsHistory() {
+            try {
+                const users = await UserAPI.getAll();
+                const shows = await ShowAPI.getAll();
+                
+                allBookings = [];
+                
+                // Get bookings for each user
+                for (const user of users) {
+                    try {
+                        const userBookings = await BookingAPI.getByUser(user.id);
+                        if (Array.isArray(userBookings)) {
+                            userBookings.forEach(booking => {
+                                booking.user = user;
+                                booking.show = shows.find(s => s.id === booking.showId);
+                            });
+                            allBookings.push(...userBookings);
+                        }
+                    } catch (e) {
+                        console.warn(`Could not load bookings for user ${user.id}`, e);
+                    }
+                }
+
+                // Apply filters
+                let filteredBookings = allBookings.slice();
+                
+                const statusFilter = document.getElementById('booking-status-filter')?.value;
+                if (statusFilter) {
+                    filteredBookings = filteredBookings.filter(b => b.paymentStatus === statusFilter);
+                }
+
+                const dateFilter = document.getElementById('booking-date-filter')?.value;
+                if (dateFilter) {
+                    const now = new Date();
+                    filteredBookings = filteredBookings.filter(b => {
+                        const bookingDate = new Date(b.createdAt || b.bookingDate || b.createdDate);
+                        if (dateFilter === 'today') return bookingDate.toDateString() === now.toDateString();
+                        if (dateFilter === 'week') return (now - bookingDate) <= 7 * 24 * 60 * 60 * 1000;
+                        if (dateFilter === 'month') return (now - bookingDate) <= 30 * 24 * 60 * 60 * 1000;
+                        return true;
+                    });
+                }
+
+                // Update stats
+                updateBookingStats(allBookings);
+                
+                // Render table
+                renderBookingsTable(filteredBookings);
+            } catch (e) {
+                console.error('Error loading bookings', e);
+                showToast(`Could not load bookings: ${e.message}`, 'error');
+            }
+        }
+
+        function updateBookingStats(bookings) {
+            const today = new Date().toDateString();
+            const totalBookings = bookings.length;
+            const todayBookings = bookings.filter(b => new Date(b.createdAt || b.bookingDate).toDateString() === today).length;
+            const confirmedBookings = bookings.filter(b => b.paymentStatus === 'CONFIRMED').length;
+            const pendingBookings = bookings.filter(b => b.paymentStatus === 'PENDING').length;
+
+            document.getElementById('total-bookings').textContent = totalBookings;
+            document.getElementById('today-bookings').textContent = todayBookings;
+            document.getElementById('confirmed-bookings').textContent = confirmedBookings;
+            document.getElementById('pending-bookings').textContent = pendingBookings;
+        }
+
+        function renderBookingsTable(bookings) {
+            const container = document.getElementById('bookings-table');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>📭 No bookings found</p></div>';
+                return;
+            }
+
+            let html = `<table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>👤 User</th>
+                        <th><span style="color:var(--primary);">▶</span> Movie</th>
+                        <th><span style="color:var(--primary);">●</span> Theater</th>
+                        <th><span style="color:var(--primary);">■</span> Show Date</th>
+                        <th><span style="color:var(--primary);">◻</span> Seats</th>
+                        <th>💰 Total Price</th>
+                        <th>💳 Payment Status</th>
+                        <th><span style="color:var(--primary);">■</span> Booked On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            bookings.forEach(booking => {
+                const user = booking.user || {};
+                const show = booking.show || {};
+                const movie = show.movie || {};
+                const theater = show.screen?.theater || {};
+                const seats = booking.seatNumbers || booking.seats || 'N/A';
+                const bookingDate = new Date(booking.createdAt || booking.bookingDate);
+                const status = booking.paymentStatus || 'PENDING';
+                const statusBadge = status === 'CONFIRMED' 
+                    ? '<span class="badge badge-success">✅ Confirmed</span>'
+                    : status === 'CANCELLED'
+                    ? '<span class="badge badge-danger">❌ Cancelled</span>'
+                    : '<span class="badge badge-warning">⏳ Pending</span>';
+
+                html += `<tr>
+                    <td><strong>#${booking.id}</strong></td>
+                    <td>
+                        <div style="font-size:0.9rem;">
+                            <strong>${user.name || user.username || 'Unknown'}</strong><br>
+                            <small style="color:var(--text-muted);">${user.email || ''}</small>
+                        </div>
+                    </td>
+                    <td>${movie.title || 'N/A'}</td>
+                    <td>${theater.name || 'N/A'}</td>
+                    <td>${show.showDate || 'N/A'} ${show.startTime || ''}</td>
+                    <td><span class="badge badge-info">${seats}</span></td>
+                    <td><strong style="color:var(--success);">₹${booking.totalPrice || 0}</strong></td>
+                    <td>${statusBadge}</td>
+                    <td><small>${bookingDate.toLocaleDateString()} ${bookingDate.toLocaleTimeString()}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewBookingDetails(${booking.id})">View</button>
+                        ${status !== 'CANCELLED' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking(${booking.id})">Cancel</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function searchBookingsByUser() {
+            const searchTerm = document.getElementById('booking-user-search')?.value.toLowerCase() || '';
+            
+            if (!searchTerm) {
+                loadBookingsHistory();
+                return;
+            }
+
+            const filtered = allBookings.filter(b => {
+                const user = b.user || {};
+                return (user.email || '').toLowerCase().includes(searchTerm) || 
+                       (user.name || '').toLowerCase().includes(searchTerm);
+            });
+
+            renderBookingsTable(filtered);
+        }
+
+        function viewBookingDetails(bookingId) {
+            const booking = allBookings.find(b => b.id === bookingId);
+            if (!booking) {
+                showToast('Booking not found', 'error');
+                return;
+            }
+
+            const user = booking.user || {};
+            const show = booking.show || {};
+            const movie = show.movie || {};
+            const theater = show.screen?.theater || {};
+            const screen = show.screen || {};
+            const status = booking.paymentStatus || 'PENDING';
+            const bookingDate = new Date(booking.createdAt || booking.bookingDate);
+            
+            const details = `
+            <div style="text-align:left; padding:1rem; line-height:1.8;">
+                <h3 style="margin-bottom:1rem; color:var(--primary);">📋 Booking Details - #${booking.id}</h3>
+                
+                <h4 style="color:var(--accent); margin-top:1.5rem;">👤 User Information</h4>
+                <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
+                <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+
+                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">▶</span> Movie Details</h4>
+                <p><strong>Title:</strong> ${movie.title || 'N/A'}</p>
+                <p><strong>Genre:</strong> ${movie.genre || 'N/A'} | <strong>Language:</strong> ${movie.language || 'N/A'}</p>
+                <p><strong>Rating:</strong> <span style="color:var(--primary);">★</span> ${movie.rating || 'N/A'}</p>
+
+                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">●</span> Show Details</h4>
+                <p><strong>Theater:</strong> ${theater.name || 'N/A'}</p>
+                <p><strong>Screen:</strong> ${screen.name || 'N/A'}</p>
+                <p><strong>Date & Time:</strong> ${show.showDate || 'N/A'} ${show.startTime || 'N/A'}</p>
+
+                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">◻</span> Booking Details</h4>
+                <p><strong>Seats:</strong> <span class="badge badge-info">${booking.seatNumbers || booking.seats || 'N/A'}</span></p>
+                <p><strong>Number of Tickets:</strong> ${booking.numberOfSeats || 'N/A'}</p>
+                <p><strong>Ticket Price (each):</strong> ₹${show.ticketPrice || 'N/A'}</p>
+                <p><strong>Total Price:</strong> <span style="color:var(--success); font-size:1.1rem; font-weight:bold;">₹${booking.totalPrice || 0}</span></p>
+
+                <h4 style="color:var(--accent); margin-top:1.5rem;">💳 Payment Information</h4>
+                <p><strong>Status:</strong> 
+                    ${status === 'CONFIRMED' 
+                        ? '<span style="color:var(--success);">✅ Confirmed (Paid)</span>'
+                        : status === 'CANCELLED'
+                        ? '<span style="color:var(--accent);">❌ Cancelled</span>'
+                        : '<span style="color:var(--warning);">⏳ Pending Payment</span>'
+                    }
+                </p>
+                <p><strong>Payment Method:</strong> ${booking.paymentMethod || 'N/A'}</p>
+                <p><strong>Transaction ID:</strong> ${booking.transactionId || 'N/A'}</p>
+
+                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">■</span> Booking Timeline</h4>
+                <p><strong>Booked On:</strong> ${bookingDate.toLocaleString()}</p>
+                <p><strong>Last Updated:</strong> ${booking.updatedAt ? new Date(booking.updatedAt).toLocaleString() : 'N/A'}</p>
+            </div>
+            `;
+
+            alert(details);
+        }
+
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
+
+            try {
+                await BookingAPI.cancel(bookingId);
+                showToast('Booking cancelled successfully!', 'success');
+                await loadBookingsHistory();
+            } catch (e) {
+                console.error('Cancel booking failed', e);
+                showToast(`Failed to cancel booking: ${e.message}`, 'error');
+            }
+>>>>>>> 50da209 (uixi)
         }
     </script>
 </body>
