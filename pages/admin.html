@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -27,30 +28,30 @@
         </div>
 
         <!-- STATS COUNTER GRID -->
-        <div class="admin-stats-grid">
+                <div class="admin-stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">🌆</div>
+                <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-city"></i></div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-cities">0</div>
                     <div class="stat-label">Active Cities</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🎬</div>
+                <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-film"></i></div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-movies">0</div>
                     <div class="stat-label">Total Movies</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🏛️</div>
+                <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-building-columns"></i></div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-theaters">0</div>
                     <div class="stat-label">Multiplexes</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🍿</div>
+                <div class="stat-icon" aria-hidden="true"><i class="fa-solid fa-ticket"></i></div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-shows">0</div>
                     <div class="stat-label">Active Shows</div>
@@ -60,12 +61,12 @@
 
         <!-- TABS -->
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('cities', this)">🌆 Cities</button>
-            <button class="tab" onclick="switchTab('movies', this)">🎬 Movies</button>
-            <button class="tab" onclick="switchTab('theaters', this)">🏛️ Theaters</button>
-            <button class="tab" onclick="switchTab('screens', this)">🖥️ Screens</button>
-            <button class="tab" onclick="switchTab('seats', this)">💺 Seats</button>
-            <button class="tab" onclick="switchTab('shows', this)">🍿 Shows</button>
+            <button class="tab active" onclick="switchTab('cities', this)"><i class="fa-solid fa-city"></i> Cities</button>
+            <button class="tab" onclick="switchTab('movies', this)"><i class="fa-solid fa-film"></i> Movies</button>
+            <button class="tab" onclick="switchTab('theaters', this)"><i class="fa-solid fa-building-columns"></i> Theaters</button>
+            <button class="tab" onclick="switchTab('screens', this)"><i class="fa-solid fa-desktop"></i> Screens</button>
+            <button class="tab" onclick="switchTab('seats', this)"><i class="fa-solid fa-couch"></i> Seats</button>
+            <button class="tab" onclick="switchTab('shows', this)"><i class="fa-solid fa-calendar-check"></i> Shows</button>
         </div>
 
         <!-- ===== CITIES TAB ===== -->
@@ -90,7 +91,7 @@
         <!-- ===== MOVIES TAB ===== -->
         <div id="tab-movies" class="tab-content" style="display:none;">
             <div class="form-card">
-                <h3 style="font-family:'Outfit',sans-serif; margin-bottom:1.25rem; color:var(--text-main);">Add New Movie</h3>
+                    <h3 id="movie-form-title" style="font-family:'Outfit',sans-serif; margin-bottom:1.25rem; color:var(--text-main);">Add New Movie</h3>
                 <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end;">
                     <div class="form-group" style="flex:2;min-width:200px;margin:0;">
                         <label>Movie Title</label>
@@ -131,7 +132,8 @@
                         <input type="file" id="movie-poster-file" accept="image/*">
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="addMovie()">+ Save Movie</button>
+                <button id="movie-save-btn" class="btn btn-primary" onclick="addMovie()">+ Save Movie</button>
+                <button id="movie-cancel-btn" class="btn btn-outline" onclick="cancelMovieEdit()" style="display:none; margin-left:0.5rem;">Cancel Edit</button>
             </div>
             <div id="movies-table"></div>
         </div>
@@ -251,6 +253,14 @@
                 </div>
             </div>
             <div id="shows-table"></div>
+                </div>
+    </div>
+
+    <!-- GENERIC ADMIN MODAL -->
+    <div class="modal-overlay" id="admin-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('admin-modal')">&times;</button>
+            <div id="admin-modal-content"></div>
         </div>
     </div>
 
@@ -311,6 +321,8 @@
         }
 
         // ===== MOVIES =====
+        let editingMovieId = null;
+
         async function loadMovies() {
             try {
                 const movies = await MovieAPI.getAll();
@@ -322,7 +334,7 @@
                     <td>#${m.id}</td><td><strong>${m.title}</strong></td><td><span class="badge badge-genre">${m.genre || 'General'}</span></td>
                     <td><span class="badge badge-lang">${m.language || 'Multi'}</span></td><td>${m.durationMinutes ? m.durationMinutes + 'm' : 'N/A'}</td>
                     <td><span class="badge badge-rating">⭐ ${m.rating || 'N/A'}</span></td>
-                    <td><button class="btn btn-sm btn-danger" onclick="deleteMovie(${m.id})">Delete</button></td>
+                    <td><button class="btn btn-sm btn-outline" onclick="editMovie(${m.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteMovie(${m.id})">Delete</button></td>
                 </tr>`);
                 html += '</tbody></table></div>';
                 document.getElementById('movies-table').innerHTML = movies.length ? html : '<div class="empty-state"><p>No movies added yet</p></div>';
@@ -364,13 +376,51 @@
             };
             if (!data.title) { showToast('Please enter movie title', 'error'); return; }
             try {
-                await MovieAPI.add(data);
-                showToast('Movie added successfully!', 'success');
-                ['movie-title','movie-genre','movie-language','movie-duration','movie-rating','movie-release','movie-desc','movie-poster']
-                    .forEach(id => document.getElementById(id).value = '');
-                document.getElementById('movie-poster-file').value = '';
+                if (editingMovieId) {
+                    await MovieAPI.update(editingMovieId, data);
+                    showToast('Movie updated successfully!', 'success');
+                    cancelMovieEdit();
+                } else {
+                    await MovieAPI.add(data);
+                    showToast('Movie added successfully!', 'success');
+                    resetMovieForm();
+                }
                 loadMovies();
             } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function editMovie(id) {
+            try {
+                const movie = await MovieAPI.getById(id);
+                editingMovieId = movie.id;
+                document.getElementById('movie-title').value = movie.title || '';
+                document.getElementById('movie-genre').value = movie.genre || '';
+                document.getElementById('movie-language').value = movie.language || '';
+                document.getElementById('movie-duration').value = movie.durationMinutes || '';
+                document.getElementById('movie-rating').value = movie.rating || '';
+                document.getElementById('movie-release').value = movie.releaseDate || '';
+                document.getElementById('movie-desc').value = movie.description || '';
+                document.getElementById('movie-poster').value = movie.posterUrl || movie.posterURL || movie.poster || movie.imageUrl || '';
+                document.getElementById('movie-poster-file').value = '';
+                document.getElementById('movie-form-title').textContent = `Edit Movie #${movie.id}`;
+                document.getElementById('movie-save-btn').textContent = 'Update Movie';
+                document.getElementById('movie-cancel-btn').style.display = 'inline-flex';
+                document.getElementById('tab-movies').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (e) { showToast(`Could not load movie: ${e.message}`, 'error'); }
+        }
+
+        function resetMovieForm() {
+            ['movie-title','movie-genre','movie-language','movie-duration','movie-rating','movie-release','movie-desc','movie-poster']
+                .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('movie-poster-file').value = '';
+        }
+
+        function cancelMovieEdit() {
+            editingMovieId = null;
+            resetMovieForm();
+            document.getElementById('movie-form-title').textContent = 'Add New Movie';
+            document.getElementById('movie-save-btn').textContent = '+ Save Movie';
+            document.getElementById('movie-cancel-btn').style.display = 'none';
         }
 
         async function deleteMovie(id) {
@@ -566,6 +616,11 @@
         async function init() {
             await Promise.all([loadCities(), loadMovies(), loadTheaters(), loadScreens(), loadShows()]);
             await loadBookingsHistory();
+            const editMovieId = new URLSearchParams(window.location.search).get('editMovie');
+            if (editMovieId) {
+                switchTab('movies', document.querySelector('.tab[onclick*="movies"]'));
+                editMovie(editMovieId);
+            }
         }
 
         // ===== BOOKINGS HISTORY =====
@@ -720,7 +775,7 @@
             renderBookingsTable(filtered);
         }
 
-        function viewBookingDetails(bookingId) {
+                function viewBookingDetails(bookingId) {
             const booking = allBookings.find(b => b.id === bookingId);
             if (!booking) {
                 showToast('Booking not found', 'error');
@@ -736,49 +791,43 @@
             const bookingDate = new Date(booking.createdAt || booking.bookingDate);
             
             const details = `
-            <div style="text-align:left; padding:1rem; line-height:1.8;">
-                <h3 style="margin-bottom:1rem; color:var(--primary);">📋 Booking Details - #${booking.id}</h3>
+            <div style="text-align:left; line-height:1.6;">
+                <h3 style="margin-bottom:1.25rem; color:var(--primary); font-family:'Outfit', sans-serif;">📋 Booking Details - #${booking.id}</h3>
                 
-                <h4 style="color:var(--accent); margin-top:1.5rem;">👤 User Information</h4>
-                <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
-                <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
-                <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem;">
+                    <div>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">👤 User Information</h4>
+                        <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+                        <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+                    </div>
 
-                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">▶</span> Movie Details</h4>
-                <p><strong>Title:</strong> ${movie.title || 'N/A'}</p>
-                <p><strong>Genre:</strong> ${movie.genre || 'N/A'} | <strong>Language:</strong> ${movie.language || 'N/A'}</p>
-                <p><strong>Rating:</strong> <span style="color:var(--primary);">★</span> ${movie.rating || 'N/A'}</p>
+                    <div>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">🎬 Movie Details</h4>
+                        <p><strong>Title:</strong> ${movie.title || 'N/A'}</p>
+                        <p><strong>Genre:</strong> ${movie.genre || 'N/A'}</p>
+                        <p><strong>Language:</strong> ${movie.language || 'N/A'}</p>
+                    </div>
 
-                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">●</span> Show Details</h4>
-                <p><strong>Theater:</strong> ${theater.name || 'N/A'}</p>
-                <p><strong>Screen:</strong> ${screen.name || 'N/A'}</p>
-                <p><strong>Date & Time:</strong> ${show.showDate || 'N/A'} ${show.startTime || 'N/A'}</p>
+                    <div>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">🏛️ Show Details</h4>
+                        <p><strong>Theater:</strong> ${theater.name || 'N/A'}</p>
+                        <p><strong>Screen:</strong> ${screen.name || 'N/A'}</p>
+                        <p><strong>Timing:</strong> ${show.showDate || ''} ${show.startTime || ''}</p>
+                    </div>
 
-                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">◻</span> Booking Details</h4>
-                <p><strong>Seats:</strong> <span class="badge badge-info">${booking.seatNumbers || booking.seats || 'N/A'}</span></p>
-                <p><strong>Number of Tickets:</strong> ${booking.numberOfSeats || 'N/A'}</p>
-                <p><strong>Ticket Price (each):</strong> ₹${show.ticketPrice || 'N/A'}</p>
-                <p><strong>Total Price:</strong> <span style="color:var(--success); font-size:1.1rem; font-weight:bold;">₹${booking.totalPrice || 0}</span></p>
-
-                <h4 style="color:var(--accent); margin-top:1.5rem;">💳 Payment Information</h4>
-                <p><strong>Status:</strong> 
-                    ${status === 'CONFIRMED' 
-                        ? '<span style="color:var(--success);">✅ Confirmed (Paid)</span>'
-                        : status === 'CANCELLED'
-                        ? '<span style="color:var(--accent);">❌ Cancelled</span>'
-                        : '<span style="color:var(--warning);">⏳ Pending Payment</span>'
-                    }
-                </p>
-                <p><strong>Payment Method:</strong> ${booking.paymentMethod || 'N/A'}</p>
-                <p><strong>Transaction ID:</strong> ${booking.transactionId || 'N/A'}</p>
-
-                <h4 style="color:var(--accent); margin-top:1.5rem;"><span style="color:var(--primary);">■</span> Booking Timeline</h4>
-                <p><strong>Booked On:</strong> ${bookingDate.toLocaleString()}</p>
-                <p><strong>Last Updated:</strong> ${booking.updatedAt ? new Date(booking.updatedAt).toLocaleString() : 'N/A'}</p>
+                    <div>
+                        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;">💳 Payment & Seats</h4>
+                        <p><strong>Seats:</strong> <span class="badge badge-info">${booking.seatNumbers || booking.seats || 'N/A'}</span></p>
+                        <p><strong>Total Price:</strong> <strong style="color:var(--success);">₹${booking.totalPrice || 0}</strong></p>
+                        <p><strong>Status:</strong> ${status}</p>
+                    </div>
+                </div>
             </div>
             `;
 
-            alert(details);
+            document.getElementById('admin-modal-content').innerHTML = details;
+            openModal('admin-modal');
         }
 
         async function cancelBooking(bookingId) {

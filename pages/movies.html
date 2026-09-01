@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>All Movies - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -27,14 +28,20 @@
 
       <!-- Modern Filter Toolbar -->
       <div class="form-card" style="margin-bottom: 2.5rem; padding: 1.25rem 1.5rem;">
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <div id="movie-filter-row" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
           <div style="flex: 2; min-width: 240px;">
-            <input
-              type="text"
-              id="search"
-              placeholder="🔍 Search movies by title, actor, or keyword..."
-              oninput="filterMovies()"
-            />
+            <div class="movie-filter-search">
+              <svg class="filter-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <input
+                type="text"
+                id="search"
+                placeholder="Search movies by title, actor, or keyword..."
+                oninput="filterMovies()"
+              />
+            </div>
           </div>
           <div style="flex: 1; min-width: 150px;">
             <select id="genre-filter" onchange="filterMovies()">
@@ -143,23 +150,26 @@
         grid.innerHTML = movies
           .map((m, i) => {
             const poster = cards[i]?.poster || "";
-            return `
+            const movieAction = canBook
+              ? '<span class="btn btn-sm btn-primary">Book Now</span>'
+              : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='admin.html?editMovie=${m.id}'">Edit Movie</span>`;
+                        return `
                 <a href="movie-detail.html?id=${m.id}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
-                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='🎬';" />` : '🎬'}
+                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<i class=\"fa-solid fa-clapperboard\"></i>';" />` : '<i class="fa-solid fa-clapperboard"></i>'}
                     </div>
                     <div class="card-body">
                         <h3>${m.title}</h3>
                         <p>${m.description || "Experience the thrill in cinema halls near you."}</p>
                         <div class="badge-group">
-                            ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ""}
-                            ${m.language ? `<span class="badge badge-lang">${m.language}</span>` : ""}
-                            ${m.rating ? `<span class="badge badge-rating"><span style="color:var(--primary);">★</span> ${m.rating}</span>` : ""}
+                            ${m.genre ? `<span class="badge badge-genre"><i class="fa-solid fa-masks-theater"></i> ${m.genre}</span>` : ""}
+                            ${m.language ? `<span class="badge badge-lang"><i class="fa-solid fa-language"></i> ${m.language}</span>` : ""}
+                            ${m.rating ? `<span class="badge badge-rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating}</span>` : ""}
                         </div>
                     </div>
                     <div class="card-footer">
-                        <span class="duration">${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
-                        ${canBook ? '<span class="btn btn-sm btn-primary">Book Now</span>' : '<span class="btn btn-sm btn-outline">Admin View</span>'}
+                        <span class="duration"><i class="fa-regular fa-clock"></i> ${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
+                        ${movieAction}
                     </div>
                 </a>
             `;

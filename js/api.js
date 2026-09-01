@@ -20,13 +20,7 @@ const API = resolveApiBase();
 
 // Helper to alert user if Render backend is cold-starting
 function notifyIfSlow(promise) {
-    let timer = setTimeout(() => {
-        if (typeof showToast === 'function') {
-            showToast('⏳ Connecting to Render server, please wait a moment...', 'info');
-        }
-    }, 2500);
-
-    return promise.finally(() => clearTimeout(timer));
+    return promise;
 }
 
 // ===== GENERIC FETCH HELPERS =====
@@ -86,6 +80,19 @@ async function apiPostFallback(endpoints, data) {
     throw lastError || new Error('All candidate endpoints failed');
 }
 
+async function apiPut(endpoint, data) {
+    const res = await notifyIfSlow(fetch(`${API}${endpoint}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }));
+    if (!res.ok) {
+        const rawBody = await res.text().catch(() => '');
+        throw new Error(rawBody || res.statusText || 'Update failed');
+    }
+    return res.text().then(text => text ? JSON.parse(text) : null).catch(() => null);
+}
+
 async function apiDelete(endpoint) {
     const res = await notifyIfSlow(fetch(`${API}${endpoint}`, {
         method: 'DELETE'
@@ -112,6 +119,7 @@ const MovieAPI = {
     getAll: () => apiGet('/movies'),
     getById: (id) => apiGet(`/movies/${id}`),
     add: (data) => apiPostFallback(['/movies', '/movies/add'], data),
+    update: (id, data) => apiPut(`/movies/${id}`, data),
     delete: (id) => apiDelete(`/movies/${id}`)
 };
 
@@ -153,6 +161,7 @@ const PaymentAPI = {
 };
 
 const UserAPI = {
+    getAll: () => apiGet('/users'),
     login: (data) => apiPost('/users/login', data),
     register: (data) => apiPost('/users/register', data),
     getById: (id) => apiGet(`/users/${id}`)

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -39,7 +40,7 @@
             return seatData.seatNumber || seatData.seat || `${seatData.row || ''}${seatData.col || ''}` || 'N/A';
         }
 
-        function formatBookingCard(booking) {
+                function formatBookingCard(booking) {
             const seats = getBookingSeatText(booking.seats || booking.seatNumbers || booking.ticketSeats);
             const foodText = Array.isArray(booking.foodItems) && booking.foodItems.length
                 ? booking.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ')
@@ -49,33 +50,27 @@
                 <div class="card" style="border: 1px solid rgba(46,204,113,0.3);">
                     <div class="card-body" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
                         <div>
-                            <h3 style="margin-bottom:0.35rem;">🎬 ${booking.show?.movie?.title || booking.movieTitle || 'Movie'}</h3>
+                            <h3 style="margin-bottom:0.35rem;"><i class="fa-solid fa-clapperboard"></i> ${booking.show?.movie?.title || booking.movieTitle || 'Movie'}</h3>
                             <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.7;">
-                                🏛️ ${booking.show?.screen?.theater?.name || booking.theaterName || ''} — ${booking.show?.screen?.name || booking.screenName || ''}<br>
-                                📅 ${booking.show?.showDate || booking.showDate || ''} &nbsp; 🕐 ${booking.show?.startTime || booking.startTime || ''}<br>
-                                💺 Seats: ${seats}<br>
-                                🍿 Food: ${foodText}<br>
-                                🕑 Booked: ${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'Just now'}
+                                <i class="fa-solid fa-building-columns"></i> ${booking.show?.screen?.theater?.name || booking.theaterName || ''} — ${booking.show?.screen?.name || booking.screenName || ''}<br>
+                                <i class="fa-regular fa-calendar-days"></i> ${booking.show?.showDate || booking.showDate || ''} &nbsp; <i class="fa-regular fa-clock"></i> ${booking.show?.startTime || booking.startTime || ''}<br>
+                                <i class="fa-solid fa-couch"></i> Seats: ${seats}<br>
+                                <i class="fa-solid fa-hotdog"></i> Food: ${foodText}<br>
+                                <i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Booked: ${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'Just now'}
                             </p>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.92rem; color:var(--text-secondary);">
-                            <div>🏛️ <strong>${booking.theaterName || booking.show?.screen?.theater?.name || 'Theater'}</strong> — ${booking.screenName || booking.show?.screen?.name || 'Screen'}</div>
-                            <div>📅 <strong>${booking.showDate || booking.show?.showDate || ''}</strong> &nbsp;|&nbsp; 🕐 <strong>${booking.startTime || booking.show?.startTime || ''}</strong></div>
-                            <div>💺 Seats: <strong style="color:var(--primary); font-size:1.05rem;">${seats}</strong></div>
-                            ${booking.food ? `<div>🍿 Snacks: <strong style="color:var(--accent);">${booking.food}</strong></div>` : ''}
-                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Booked on: ${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'Just now'}</div>
+                        <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:1rem;">
+                            <div>
+                                <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Total Paid</div>
+                                <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${booking.totalPrice || 0}</div>
+                            </div>
+                            <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${booking.id}')"><i class="fa-solid fa-trash-can"></i> Cancel Ticket</button>
                         </div>
-                    </div>
-                    <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:1rem;">
-                        <div>
-                            <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Total Paid</div>
-                            <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${booking.totalPrice || 0}</div>
-                        </div>
-                        <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${booking.id}')">Cancel Ticket</button>
                     </div>
                 </div>
             `;
         }
+        
 
         async function loadBookings() {
             const user = getLoggedInUser();

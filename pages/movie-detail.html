@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Details & Ticket Booking - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -40,10 +41,10 @@
     <div class="modal-overlay" id="seat-modal">
         <div class="modal" style="max-width:700px;">
             <button class="modal-close" onclick="closeModal('seat-modal')">&times;</button>
-            <h2 id="seat-modal-title" style="font-family:'Outfit',sans-serif; font-size:1.4rem; margin-bottom:1.25rem;">Select Your Seats</h2>
+                        <h2 id="seat-modal-title" style="font-family:'Outfit',sans-serif; font-size:1.4rem; margin-bottom:1.25rem;">Select Your Seats</h2>
             
             <!-- Curved Screen -->
-            <div class="screen-label">CINEMA SCREEN THIS WAY</div>
+            <div class="screen-label"><i class="fa-solid fa-display"></i> CINEMA SCREEN THIS WAY</div>
             <div class="screen-indicator"></div>
 
             <!-- Interactive Checkbox Seats Map -->
@@ -62,14 +63,14 @@
                 </div>
             </div>
 
-            <!-- FOOD & BEVERAGES SECTION -->
+                        <!-- FOOD & BEVERAGES SECTION -->
             <div style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border-subtle);">
                 <h4 style="font-family:'Outfit',sans-serif; font-size:1.1rem; color:#fff; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
-                    🍿 Grab Snacks & Drinks <span class="badge" style="background:var(--accent-glow); color:var(--accent); font-size:0.7rem;">F&B ADD-ON</span>
+                    <i class="fa-solid fa-hotdog" style="color:var(--accent);"></i> Grab Snacks & Drinks <span class="badge" style="background:var(--accent-glow); color:var(--accent); font-size:0.7rem;">F&B ADD-ON</span>
                 </h4>
                 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:0.65rem;" id="food-items-container">
                     <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
-                        <div style="font-size:1.6rem; margin-bottom:0.2rem;">🍿</div>
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-popcorn" style="color:#f1c40f;"></i></div>
                         <div style="font-size:0.82rem; font-weight:700; color:#fff;">Popcorn</div>
                         <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹180</div>
                         <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
@@ -80,7 +81,7 @@
                     </div>
 
                     <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
-                        <div style="font-size:1.6rem; margin-bottom:0.2rem;">🥤</div>
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-glass-water" style="color:#3498db;"></i></div>
                         <div style="font-size:0.82rem; font-weight:700; color:#fff;">Cold Drink</div>
                         <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹120</div>
                         <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
@@ -91,7 +92,7 @@
                     </div>
 
                     <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
-                        <div style="font-size:1.6rem; margin-bottom:0.2rem;">🧀</div>
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-cheese" style="color:#f1c40f;"></i></div>
                         <div style="font-size:0.82rem; font-weight:700; color:#fff;">Cheese Nachos</div>
                         <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹160</div>
                         <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
@@ -102,7 +103,7 @@
                     </div>
 
                     <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
-                        <div style="font-size:1.6rem; margin-bottom:0.2rem;">🎬</div>
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-box-archive" style="color:var(--primary);"></i></div>
                         <div style="font-size:0.82rem; font-weight:700; color:#fff;">Movie Combo</div>
                         <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹250</div>
                         <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
@@ -177,22 +178,22 @@
                     heroEl.style.backgroundImage = `url("${poster}")`;
                 }
 
-                heroEl.innerHTML = `
+                                heroEl.innerHTML = `
                     <div class="movie-detail-content">
                         <div class="movie-poster-large">
-                            ${poster ? `<img src="${poster}" alt="${movie.title}" onerror="this.style.display='none'; this.parentElement.textContent='🎬'" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:5rem;">🎬</div>'}
+                            ${poster ? `<img src="${poster}" alt="${movie.title}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fa-solid fa-clapperboard\" style=\"font-size:5rem;\"></i>'" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:5rem;"><i class="fa-solid fa-clapperboard"></i></div>'}
                         </div>
                         <div class="movie-info-header">
                             <h1>${movie.title}</h1>
                             <div class="movie-meta-row">
-                                ${movie.rating ? `<span class="badge badge-rating">⭐ ${movie.rating} / 10</span>` : ''}
-                                ${movie.genre ? `<span class="badge badge-genre">${movie.genre}</span>` : ''}
-                                ${movie.language ? `<span class="badge badge-lang">${movie.language}</span>` : ''}
-                                ${movie.durationMinutes ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);">⏱ ${movie.durationMinutes} min</span>` : ''}
-                                ${movie.releaseDate ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);">📅 ${movie.releaseDate}</span>` : ''}
+                                ${movie.rating ? `<span class="badge badge-rating"><i class="fa-solid fa-star"></i> ${movie.rating} / 10</span>` : ''}
+                                ${movie.genre ? `<span class="badge badge-genre"><i class="fa-solid fa-masks-theater"></i> ${movie.genre}</span>` : ''}
+                                ${movie.language ? `<span class="badge badge-lang"><i class="fa-solid fa-language"></i> ${movie.language}</span>` : ''}
+                                ${movie.durationMinutes ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);"><i class="fa-regular fa-clock"></i> ${movie.durationMinutes} min</span>` : ''}
+                                ${movie.releaseDate ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);"><i class="fa-regular fa-calendar-days"></i> ${movie.releaseDate}</span>` : ''}
                             </div>
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
-                            <a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;">Book Tickets</a>
+                            ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
                         </div>
                     </div>
                 `;
@@ -215,16 +216,16 @@
                     return;
                 }
                 const canBook = !userIsAdmin();
-                document.getElementById('shows-list').innerHTML = shows.map(s => `
+                                document.getElementById('shows-list').innerHTML = shows.map(s => `
                     <div class="show-card">
                         <div class="show-info">
-                            <h4><span style="color:var(--primary);">⌂</span> ${s.screen?.theater?.name || 'Grand Cinema'} • ${s.screen?.name || 'Audi 1'}</h4>
-                            <p><span style="color:var(--primary);">■</span> ${s.showDate} &nbsp;|&nbsp; <span style="color:var(--primary);">◐</span> ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
-                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">📍 ${s.screen?.theater?.city?.name || 'City Center'}</p>
+                            <h4><i class="fa-solid fa-building-columns" style="color:var(--primary);"></i> ${s.screen?.theater?.name || 'Grand Cinema'} • ${s.screen?.name || 'Audi 1'}</h4>
+                            <p><i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i> ${s.showDate} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color:var(--primary);"></i> ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;"><i class="fa-solid fa-location-dot"></i> ${s.screen?.theater?.city?.name || 'City Center'}</p>
                         </div>
                         <div class="show-meta">
                             <div class="price">₹${s.ticketPrice || 150}</div>
-                            ${canBook ? `<button class="btn btn-sm btn-primary" style="margin-top:0.5rem;" data-show="${encodeURIComponent(JSON.stringify(s))}" onclick="selectShowFromTrigger(this)">Select Seats & Snacks</button>` : '<span class="btn btn-sm btn-outline" style="margin-top:0.5rem;">Admin View</span>'}
+                            ${canBook ? `<button class="btn btn-sm btn-primary" style="margin-top:0.5rem;" data-show="${encodeURIComponent(JSON.stringify(s))}" onclick="selectShowFromTrigger(this)"><i class="fa-solid fa-couch"></i> Select Seats & Snacks</button>` : '<span class="btn btn-sm btn-outline" style="margin-top:0.5rem;"><i class="fa-solid fa-user-tie"></i> Admin View</span>'}
                         </div>
                     </div>
                 `).join('');

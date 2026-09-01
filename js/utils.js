@@ -43,24 +43,59 @@ function updateNavUser() {
     const navUser = document.getElementById('nav-user');
     if (!navUser) return;
     const user = getLoggedInUser();
+    const navLinks = document.querySelector('.nav-links');
+    
+    // Clear existing mobile user section if any
+    navLinks?.querySelector('.mobile-user-section')?.remove();
+    
     const adminLink = userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-sm btn-primary">Admin Panel</a>` : '';
     const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-sm btn-outline">Dashboard</a>` : '';
+    
     if (user) {
         const roleLabel = user.role ? `<span class="role-tag">${user.role}</span>` : '';
-        navUser.innerHTML = `
+        const userHtml = `
             <div class="user-badge">
                 <span>Hi, <strong>${user.name || 'User'}</strong></span>
                 ${roleLabel}
             </div>
             ${adminLink}
             ${dashboardLink}
-            <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+            <button class="btn btn-sm btn-outline nav-logout" onclick="logout()">Logout</button>
         `;
+        navUser.innerHTML = userHtml;
+        
+        // Add to mobile menu
+        if (navLinks) {
+            const mobileSection = document.createElement('div');
+            mobileSection.className = 'mobile-user-section';
+            mobileSection.innerHTML = `
+                <div class="user-badge" style="margin-bottom: 1rem; justify-content: center;">
+                    <span>Hi, <strong>${user.name || 'User'}</strong></span>
+                    ${roleLabel}
+                </div>
+                ${userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-primary btn-block">Admin Panel</a>` : ''}
+                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-outline btn-block">Dashboard</a>` : ''}
+                <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
+            `;
+            navLinks.prepend(mobileSection);
+        }
     } else {
-        navUser.innerHTML = `
+        const loginButtons = `
             <a href="${getPagePath('pages/login.html')}" class="btn btn-sm btn-outline">Login</a>
             <a href="${getPagePath('pages/register.html')}" class="btn btn-sm btn-primary">Sign Up</a>
         `;
+        navUser.innerHTML = loginButtons;
+        
+        // Add to mobile menu
+        if (navLinks) {
+            const mobileSection = document.createElement('div');
+            mobileSection.className = 'mobile-user-section';
+            mobileSection.innerHTML = `
+                <a href="${getPagePath('pages/login.html')}" class="btn btn-outline btn-block">Login</a>
+                <a href="${getPagePath('pages/register.html')}" class="btn btn-primary btn-block">Sign Up</a>
+            `;
+            navLinks.prepend(mobileSection);
+        }
     }
 }
 

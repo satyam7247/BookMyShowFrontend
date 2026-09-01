@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -139,23 +140,23 @@
                     showEmpty('dashboard-bookings', 'No active show bookings or snacks orders found');
                 } else {
                     bookingsEl.innerHTML = activeList.map(b => `
-                        <div class="show-card" style="border-left:5px solid var(--success); padding:1.4rem;">
-                            <div class="show-info">
-                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-                                    <span class="badge" style="background:var(--success-glow); color:var(--success);">CONFIRMED TICKET</span>
-                                    <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${b.id}</span>
+                                <div class="show-card" style="border-left:5px solid var(--success); padding:1.4rem;">
+                                    <div class="show-info">
+                                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                                            <span class="badge" style="background:var(--success-glow); color:var(--success);"><i class="fa-solid fa-circle-check"></i> CONFIRMED TICKET</span>
+                                            <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${b.id}</span>
+                                        </div>
+                                        <h4 style="font-size:1.3rem;"><i class="fa-solid fa-clapperboard" style="color:var(--primary);"></i> ${b.movieTitle}</h4>
+                                        <p><i class="fa-solid fa-building-columns" style="color:var(--primary);"></i> ${b.theaterName} — ${b.screenName}</p>
+                                        <p><i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i> ${b.showDate} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color:var(--primary);"></i> ${b.startTime} &nbsp;|&nbsp; <i class="fa-solid fa-couch" style="color:var(--primary);"></i> Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
+                                        ${b.food ? `<p style="margin-top:0.25rem;"><i class="fa-solid fa-hotdog" style="color:var(--primary);"></i> Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
+                                    </div>
+                                    <div class="show-meta" style="justify-content:space-between;">
+                                        <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
+                                        <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${b.id}')"><i class="fa-solid fa-trash-can"></i> Cancel Ticket</button>
+                                    </div>
                                 </div>
-                                <h4 style="font-size:1.3rem;"><span style="color:var(--primary);">▶</span> ${b.movieTitle}</h4>
-                                <p><span style="color:var(--primary);">⌂</span> ${b.theaterName} — ${b.screenName}</p>
-                                <p><span style="color:var(--primary);">■</span> ${b.showDate} &nbsp;|&nbsp; <span style="color:var(--primary);">◐</span> ${b.startTime} &nbsp;|&nbsp; <span style="color:var(--primary);">◻</span> Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
-                                ${b.food ? `<p style="margin-top:0.25rem;"><span style="color:var(--primary);">♦</span> Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
-                            </div>
-                            <div class="show-meta" style="justify-content:space-between;">
-                                <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
-                                <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${b.id}')">Cancel Ticket</button>
-                            </div>
-                        </div>
-                    `).join('');
+                            `).join('');
                 }
             } catch (e) {
                 showEmpty('dashboard-bookings', 'Could not load upcoming bookings');

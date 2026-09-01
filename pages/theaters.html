@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theaters & Multiplexes - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -80,23 +81,23 @@
             }
         }
 
-        function renderTheaters(theaters) {
+                function renderTheaters(theaters) {
             const grid = document.getElementById('theaters-grid');
             if (!theaters || theaters.length === 0) { showEmpty('theaters-grid', 'No cinema theaters available'); return; }
             grid.innerHTML = theaters.map(t => `
                 <div class="card" style="padding:0;">
                     <div class="card-body" style="padding:1.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
-                            <div style="width:46px; height:46px; border-radius:var(--radius-md); background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">⌂</div>
+                            <div style="width:46px; height:46px; border-radius:var(--radius-md); background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"><i class="fa-solid fa-building-columns"></i></div>
                             <div>
                                 <h3 style="font-size:1.2rem; margin:0;">${t.name}</h3>
-                                <span style="font-size:0.8rem; color:var(--text-muted);">📍 ${t.city?.name || 'City'}, ${t.city?.state || ''}</span>
+                                <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-location-dot"></i> ${t.city?.name || 'City'}, ${t.city?.state || ''}</span>
                             </div>
                         </div>
                         <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:1rem;">${t.address || 'Premium multiplex audio & 4K laser projection screening.'}</p>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-sm btn-outline btn-block" onclick="viewScreens(${t.id}, '${t.name}')">View Screens & Specs</button>
+                        <button class="btn btn-sm btn-outline btn-block" onclick="viewScreens(${t.id}, '${t.name}')"><i class="fa-solid fa-desktop"></i> View Screens & Specs</button>
                     </div>
                 </div>
             `).join('');
