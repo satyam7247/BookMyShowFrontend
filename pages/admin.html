@@ -565,8 +565,6 @@
         // ===== INIT =====
         async function init() {
             await Promise.all([loadCities(), loadMovies(), loadTheaters(), loadScreens(), loadShows()]);
-<<<<<<< HEAD
-=======
             await loadBookingsHistory();
         }
 
@@ -794,7 +792,6 @@
                 console.error('Cancel booking failed', e);
                 showToast(`Failed to cancel booking: ${e.message}`, 'error');
             }
->>>>>>> 50da209 (uixi)
         }
     </script>
 </body>

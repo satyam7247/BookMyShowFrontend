@@ -170,7 +170,6 @@
                 const movie = await MovieAPI.getById(movieId);
                 const poster = await getBestMoviePoster(movie);
                 document.title = `${movie.title} - BookMyShow`;
-<<<<<<< HEAD
                 
                 const heroEl = document.getElementById('movie-detail-hero');
                 heroEl.className = 'movie-hero-backdrop';
@@ -195,22 +194,6 @@
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
                             <a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;">Book Tickets</a>
                         </div>
-=======
-                document.getElementById('movie-detail').innerHTML = `
-                    <div style="width:220px; height:320px; border-radius:var(--radius); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:6rem; background:linear-gradient(135deg, #1a1a2e, #16213e);">
-                        ${poster ? `<img src="${poster}" alt="${movie.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.textContent='▶'" style="width:100%; height:100%; object-fit:cover;" />` : '▶'}
-                    </div>
-                    <div style="flex:1; min-width:250px;">
-                        <h1 style="font-size:2rem; margin-bottom:0.5rem;">${movie.title}</h1>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
-                            ${movie.genre ? `<span class="badge badge-genre">${movie.genre}</span>` : ''}
-                            ${movie.language ? `<span class="badge badge-lang">${movie.language}</span>` : ''}
-                            ${movie.rating ? `<span class="badge badge-rating"><span style="color:var(--primary);">★</span> ${movie.rating}</span>` : ''}
-                            ${movie.durationMinutes ? `<span class="badge" style="background:rgba(255,255,255,0.1);color:var(--text-muted);">⏱ ${movie.durationMinutes} min</span>` : ''}
-                        </div>
-                        <p style="color:var(--text-muted); line-height:1.8; margin-bottom:1rem;">${movie.description || 'No description available.'}</p>
-                        ${movie.releaseDate ? `<p style="color:var(--text-muted); font-size:0.9rem;"><span style="color:var(--primary);">■</span> Release: ${movie.releaseDate}</p>` : ''}
->>>>>>> 50da209 (uixi)
                     </div>
                 `;
                 loadShows();
@@ -235,15 +218,9 @@
                 document.getElementById('shows-list').innerHTML = shows.map(s => `
                     <div class="show-card">
                         <div class="show-info">
-<<<<<<< HEAD
-                            <h4>🎥 ${s.screen?.theater?.name || 'Grand Cinema'} • ${s.screen?.name || 'Audi 1'}</h4>
-                            <p>📅 ${s.showDate} &nbsp;|&nbsp; 🕐 ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
+                            <h4><span style="color:var(--primary);">⌂</span> ${s.screen?.theater?.name || 'Grand Cinema'} • ${s.screen?.name || 'Audi 1'}</h4>
+                            <p><span style="color:var(--primary);">■</span> ${s.showDate} &nbsp;|&nbsp; <span style="color:var(--primary);">◐</span> ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
                             <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">📍 ${s.screen?.theater?.city?.name || 'City Center'}</p>
-=======
-                            <h4>🎥 ${s.screen?.theater?.name || 'Theater'} - ${s.screen?.name || 'Screen'}</h4>
-                            <p><span style="color:var(--primary);">■</span> ${s.showDate} &nbsp; <span style="color:var(--primary);">◐</span> ${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</p>
-                            <p style="font-size:0.8rem; color:var(--text-muted);">${s.screen?.theater?.city?.name || ''}</p>
->>>>>>> 50da209 (uixi)
                         </div>
                         <div class="show-meta">
                             <div class="price">₹${s.ticketPrice || 150}</div>

@@ -234,7 +234,6 @@ function showLoading(containerId) {
 
 function showEmpty(containerId, message = 'No data found') {
     const el = document.getElementById(containerId);
-<<<<<<< HEAD
     if (el) {
         el.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-card); animation: fadeIn 0.4s ease;">
@@ -244,9 +243,6 @@ function showEmpty(containerId, message = 'No data found') {
             </div>
         `;
     }
-=======
-    if (el) el.innerHTML = `<div class="empty-state"><div class="icon">▶</div><p>${message}</p></div>`;
->>>>>>> 50da209 (uixi)
 }
 
 // ===== MODAL HELPERS =====

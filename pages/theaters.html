@@ -84,24 +84,16 @@
             const grid = document.getElementById('theaters-grid');
             if (!theaters || theaters.length === 0) { showEmpty('theaters-grid', 'No cinema theaters available'); return; }
             grid.innerHTML = theaters.map(t => `
-<<<<<<< HEAD
                 <div class="card" style="padding:0;">
                     <div class="card-body" style="padding:1.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
-                            <div style="width:46px; height:46px; border-radius:var(--radius-md); background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">🏛️</div>
+                            <div style="width:46px; height:46px; border-radius:var(--radius-md); background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">⌂</div>
                             <div>
                                 <h3 style="font-size:1.2rem; margin:0;">${t.name}</h3>
                                 <span style="font-size:0.8rem; color:var(--text-muted);">📍 ${t.city?.name || 'City'}, ${t.city?.state || ''}</span>
                             </div>
                         </div>
                         <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:1rem;">${t.address || 'Premium multiplex audio & 4K laser projection screening.'}</p>
-=======
-                <div class="card">
-                    <div class="card-body">
-                        <h3><span style="color:var(--primary);">⌂</span> ${t.name}</h3>
-                        <p>📍 ${t.address || 'N/A'}</p>
-                        <p>🌆 ${t.city?.name || ''}, ${t.city?.state || ''}</p>
->>>>>>> 50da209 (uixi)
                     </div>
                     <div class="card-footer">
                         <button class="btn btn-sm btn-outline btn-block" onclick="viewScreens(${t.id}, '${t.name}')">View Screens & Specs</button>
@@ -114,7 +106,7 @@
             try {
                 const screens = await ScreenAPI.getByTheater(theaterId);
                 if (!screens || screens.length === 0) { showToast('No screens found for this theater', 'info'); return; }
-                let msg = `🎬 ${theaterName}\nAvailable Screens:\n`;
+                let msg = `▶ ${theaterName}\nAvailable Screens:\n`;
                 screens.forEach(s => msg += `\n• ${s.name} (${s.totalSeats || '100'} Seats)`);
                 alert(msg);
             } catch (e) {
