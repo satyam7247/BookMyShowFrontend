@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BookMyShow - Movie Tickets, Shows & Entertainment</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="pages/css/style.css" />
   </head>
   <body>
@@ -23,7 +23,7 @@
 
         <!-- CITY BAR -->
     <div class="city-bar" id="city-bar">
-      <span class="city-bar-label"><i class="fa-solid fa-location-dot"></i> City:</span>
+      <span class="city-bar-label"><i class="material-icons">location_on</i> City:</span>
     </div>
 
     <!-- HERO -->
@@ -171,13 +171,13 @@
                         <h3>${m.title}</h3>
                         <p>${m.description || "Experience the thrill in high definition cinema sound & visual."}</p>
                         <div class="badge-group">
-                            ${m.genre ? `<span class="badge badge-genre"><i class="fa-solid fa-masks-theater"></i> ${m.genre}</span>` : ""}
-                            ${m.language ? `<span class="badge badge-lang"><i class="fa-solid fa-language"></i> ${m.language}</span>` : ""}
-                            ${m.rating ? `<span class="badge badge-rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating}</span>` : ""}
+                            ${m.genre ? `<span class="badge badge-genre"><i class="material-icons">theater_comedy</i> ${m.genre}</span>` : ""}
+                            ${m.language ? `<span class="badge badge-lang"><i class="material-icons">language</i> ${m.language}</span>` : ""}
+                            ${m.rating ? `<span class="badge badge-rating"><i class="material-icons" style="color:var(--accent);">star</i> ${m.rating}</span>` : ""}
                         </div>
                     </div>
                     <div class="card-footer">
-                        <span class="duration"><i class="fa-regular fa-clock"></i> ${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
+                        <span class="duration"><i class="material-icons">schedule</i> ${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
                         ${movieAction}
                     </div>
                 </a>

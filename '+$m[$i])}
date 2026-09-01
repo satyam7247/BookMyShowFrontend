@@ -1,0 +1,35 @@
+At line:1 char:7874
++ ... ('material-icons";Set-Content $p $c -NoNewline;Write-Host 'OK 
+'$file} ...
++                                                                ~~
+Unexpected token 'OK' in expression or statement.
+At line:1 char:7874
++ ... ],('material-icons";Set-Content $p $c -NoNewline;Write-Host 
+'OK '$fil ...
++                                                                  ~
+Missing closing ')' in expression.
+At line:1 char:7929
++ ... ;Write-Host 'OK '$file}else{Write-Host 'NF '$file}};Write-Host 
+'DONE'
++                                                                    
+     ~
+The string is missing the terminator: '.
+At line:1 char:7792
++ ... h $p){$c=Get-Content $p -Raw;for($i=0;$i -lt 
+$r.Length;$i++){$c=$c -r ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+At line:1 char:7737
++ ... ;foreach($file in $f){$p=Join-Path $b $file;if(Test-Path 
+$p){$c=Get-C ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+At line:1 char:7698
++ ... \Users\Win11 Pro\Desktop\UI BMS - Copy';foreach($file in 
+$f){$p=Join- ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErr 
+   orRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
