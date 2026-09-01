@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-    <!-- NAVBAR -->
     <nav class="navbar">
         <a href="../index.html" class="logo">Book<span>My</span>Show</a>
         <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle menu"><span class="hamburger"></span></button>
@@ -28,19 +26,84 @@
         <div id="bookings-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
     </div>
 
+    <div class="modal-overlay" id="ticket-modal">
+        <div class="modal" style="max-width:620px;">
+            <button class="modal-close" onclick="closeModal('ticket-modal')">&times;</button>
+            <div id="ticket-content"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="refund-modal">
+        <div class="modal" style="max-width:520px;">
+            <button class="modal-close" onclick="closeModal('refund-modal')">&times;</button>
+            <h3 style="margin-bottom:0.75rem;">Refund Policy</h3>
+            <div class="refund-policy-box">
+                <p><strong>Important:</strong> Once payment is successful, cancellation does not guarantee an automatic refund.</p>
+                <p>Refund eligibility depends on the movie/show policy, timing of cancellation, and the booking status. Please read this carefully before continuing.</p>
+                <label class="refund-checkbox-wrap">
+                    <input id="refund-confirm-checkbox" type="checkbox">
+                    <span>I have read the refund policy and understand that payment may not be returned on cancellation.</span>
+                </label>
+            </div>
+            <div class="ticket-actions" style="margin-top:1rem; justify-content:flex-end;">
+                <button class="btn btn-outline" onclick="closeModal('refund-modal')">Cancel</button>
+                <button id="refund-confirm-btn" class="btn btn-danger" disabled>Proceed to Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/api.js"></script>
     <script src="../js/utils.js"></script>
     <script>
+        const bookingCache = new Map();
+
+        function getBookingSeatText(seats) {
+            if (!Array.isArray(seats) || !seats.length) return 'N/A';
+            return seats.map(seat => seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`).join(', ');
+        }
+
+        function getBookingFoodText(foodItems) {
+            if (!Array.isArray(foodItems) || !foodItems.length) return 'No food added';
+            return foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ');
+        }
+
+        function formatBookingRowLabel(label, value) {
+            return `<div><strong><span style="color:var(--primary);">${label}</span></strong><span>${value}</span></div>`;
+        }
+
+        function buildBookingTicketData(booking) {
+            const seats = Array.isArray(booking.seats) ? booking.seats : [];
+            const foodItems = Array.isArray(booking.foodItems) ? booking.foodItems : [];
+            const totalAmount = Number(booking.totalPrice || booking.amount || 0);
+
+            return {
+                bookingId: booking.id || booking.bookingId || 'N/A',
+                status: booking.status || 'CONFIRMED',
+                movieTitle: booking.movieTitle || booking.show?.movie?.title || 'Movie',
+                theaterName: booking.theaterName || booking.show?.screen?.theater?.name || 'Theater',
+                screenName: booking.screenName || booking.show?.screen?.name || 'Screen',
+                showDate: booking.showDate || booking.show?.showDate || 'N/A',
+                startTime: booking.startTime || booking.show?.startTime || 'N/A',
+                endTime: booking.endTime || booking.show?.endTime || '',
+                seats: seats,
+                foodItems: foodItems,
+                deliveryWindow: booking.deliveryWindow || 'Venue pickup / counter collection',
+                totalAmount: totalAmount,
+                paymentStatus: booking.paymentStatus || 'Payment confirmed',
+            };
+        }
+
         async function loadBookings() {
             const user = getLoggedInUser();
             if (!user) {
                 document.getElementById('bookings-list').innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">🔐</div>
+                        <div class="icon" style="color:var(--primary);">◆</div>
                         <p>Please <a href="login.html" style="color:var(--primary);font-weight:700;">login</a> to view your bookings.</p>
                     </div>`;
                 return;
             }
+
             if (user.role && user.role.toLowerCase() === 'admin') {
                 showToast('Admin users should use the Admin Panel', 'info');
                 setTimeout(() => window.location.href = 'admin.html', 800);
@@ -48,56 +111,69 @@
             }
 
             showLoading('bookings-list');
+
             try {
                 const bookings = await BookingAPI.getByUser(user.id);
-                // hide cancelled bookings from history (show only active/confirmed)
-                const visible = (bookings || []).filter(b => b.status !== 'CANCELLED');
-                if (visible.length === 0) {
-                    showEmpty('bookings-list', 'No bookings yet. Go book some movies! 🎬');
+                const visible = (bookings || []).filter(b => String(b.status || '').toUpperCase() !== 'CANCELLED');
+                bookingCache.clear();
+                visible.forEach(booking => bookingCache.set(String(booking.id), booking));
+
+                if (!visible.length) {
+                    showEmpty('bookings-list', 'No bookings yet. Go book some movies!');
                     return;
                 }
 
-                document.getElementById('bookings-list').innerHTML = visible.map(b => {
-                    const seats = Array.isArray(b.seats) && b.seats.length ? b.seats.map(s => s.seatNumber || s.seat || `${s.row || ''}${s.col || ''}`).join(', ') : 'N/A';
-                    const foodItems = Array.isArray(b.foodItems) && b.foodItems.length ? b.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ') : 'No food added';
-                    const activePaidStatus = ['CONFIRMED', 'SUCCESSFUL', 'PAID', 'BOOKED', 'COMPLETED'].includes(String(b.status || '').toUpperCase());
+                document.getElementById('bookings-list').innerHTML = visible.map(booking => {
+                    const title = booking.movieTitle || booking.show?.movie?.title || 'Movie';
+                    const theater = booking.theaterName || booking.show?.screen?.theater?.name || 'Theater';
+                    const screen = booking.screenName || booking.show?.screen?.name || 'Screen';
+                    const showDate = booking.showDate || booking.show?.showDate || 'N/A';
+                    const startTime = booking.startTime || booking.show?.startTime || 'N/A';
+                    const seats = getBookingSeatText(booking.seats);
+                    const food = getBookingFoodText(booking.foodItems);
+
                     return `
-                        <div class="card" style="border: ${b.status === 'CANCELLED' ? '1px solid rgba(233,69,96,0.3)' : '1px solid rgba(46,204,113,0.3)'};">
+                        <div class="card" style="border:1px solid rgba(46,204,113,0.35);">
                             <div class="card-body" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
                                 <div>
-                                    <h3 style="margin-bottom:0.3rem;">🎬 ${b.show?.movie?.title || 'Movie'}</h3>
-                                    <p style="color:var(--text-muted); font-size:0.85rem;">
-                                        🏛️ ${b.show?.screen?.theater?.name || ''} — ${b.show?.screen?.name || ''}<br>
-                                        📅 ${b.show?.showDate || ''} &nbsp; 🕐 ${b.show?.startTime || ''}<br>
-                                        💺 Seats: ${seats}<br>
-                                        🍿 Food: ${foodItems}<br>
-                                        🕑 Booked: ${b.bookedAt ? new Date(b.bookedAt).toLocaleString() : ''}
+                                    <h3 style="margin-bottom:0.35rem;"><span style="color:var(--primary);">▶</span> ${title}</h3>
+                                    <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.7;">
+                                        <span style="color:var(--primary);">⌂</span> ${theater} — ${screen}<br>
+                                        <span style="color:var(--primary);">■</span> ${showDate} &nbsp; <span style="color:var(--primary);">◐</span> ${startTime}<br>
+                                        <span style="color:var(--primary);">◻</span> Seats: ${seats}<br>
+                                        <span style="color:var(--primary);">♦</span> Food: ${food}<br>
+                                        <span style="color:var(--primary);">◔</span> Booked: ${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'Just now'}
                                     </p>
                                 </div>
-                                <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.6rem;">🎬 ${b.movieTitle}</h3>
-                                <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.92rem; color:var(--text-secondary);">
-                                    <div>🏛️ <strong>${b.theaterName}</strong> — ${b.screenName}</div>
-                                    <div>📅 <strong>${b.showDate}</strong> &nbsp;|&nbsp; 🕐 <strong>${b.startTime}</strong></div>
-                                    <div>💺 Seats: <strong style="color:var(--primary); font-size:1.05rem;">${b.seats}</strong></div>
-                                    ${b.food ? `<div>🍿 Snacks & Drinks: <strong style="color:var(--accent);">${b.food}</strong></div>` : ''}
-                                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Booked on: ${b.bookedAt ? new Date(b.bookedAt).toLocaleString() : 'Just now'}</div>
-                                </div>
-                            </div>
-                            <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:1rem;">
-                                <div>
+                                <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
                                     <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Total Paid</div>
-                                    <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${b.totalPrice || 0}</div>
+                                    <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${booking.totalPrice || 0}</div>
+                                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:flex-end;">
+                                        <button class="btn btn-sm btn-primary" onclick="showBookingTicket('${booking.id}')">View Ticket</button>
+                                        <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="openRefundPolicyModal('${booking.id}')">Cancel Ticket</button>
+                                    </div>
                                 </div>
-                                <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${b.id}')">Cancel Ticket</button>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (e) {
+                console.error('loadBookings error:', e);
                 showEmpty('bookings-list', 'Could not load your ticket history.');
             }
+        }
+
+        function showBookingTicket(bookingId) {
+            const booking = bookingCache.get(String(bookingId));
+            if (!booking) {
+                showToast('Booking data not found', 'error');
+                return;
+            }
+
             const ticketData = buildBookingTicketData(booking);
             const content = document.getElementById('ticket-content');
+            const ticketJSON = JSON.stringify(ticketData).replace(/"/g, '&quot;');
+
             content.innerHTML = `
                 <div class="ticket-card">
                     <div class="ticket-topbar">
@@ -107,79 +183,90 @@
                         </div>
                         <div class="ticket-order">Booking ID: ${ticketData.bookingId}</div>
                     </div>
-                    <div class="ticket-headline">Movie Ticket</div>
+                    <div class="ticket-headline"><span style="color:var(--primary);">▶</span> Movie Ticket</div>
                     <div class="ticket-meta">
-                        <div><strong>Movie</strong><span>${ticketData.movieTitle}</span></div>
-                        <div><strong>Theater</strong><span>${ticketData.theaterName}</span></div>
-                        <div><strong>Screen</strong><span>${ticketData.screenName}</span></div>
-                        <div><strong>Date</strong><span>${ticketData.showDate}</span></div>
-                        <div><strong>Time</strong><span>${ticketData.startTime}${ticketData.endTime ? ' - ' + ticketData.endTime : ''}</span></div>
-                        <div><strong>Seats</strong><span>${ticketData.seats.map(seat => seat.seatNumber).join(', ')}</span></div>
+                        <div><strong><span style="color:var(--primary);">▶</span> Movie</strong><span>${ticketData.movieTitle}</span></div>
+                        <div><strong><span style="color:var(--primary);">⌂</span> Theater</strong><span>${ticketData.theaterName}</span></div>
+                        <div><strong><span style="color:var(--primary);">●</span> Screen</strong><span>${ticketData.screenName}</span></div>
+                        <div><strong><span style="color:var(--primary);">■</span> Date</strong><span>${ticketData.showDate}</span></div>
+                        <div><strong><span style="color:var(--primary);">◐</span> Time</strong><span>${ticketData.startTime}${ticketData.endTime ? ' - ' + ticketData.endTime : ''}</span></div>
+                        <div><strong><span style="color:var(--primary);">◻</span> Seats</strong><span>${ticketData.seats.map(seat => seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`).join(', ') || 'N/A'}</span></div>
                     </div>
-                    <div class="ticket-section-title">Food Add-ons</div>
+                    <div class="ticket-section-title"><span style="color:var(--primary);">♦</span> Food Add-ons</div>
                     <div class="ticket-food-list">
                         ${ticketData.foodItems.length ? ticketData.foodItems.map(item => `
-                            <div class="ticket-food-item"><span>${item.name} x${item.quantity}</span><span>₹${(item.price || 0) * item.quantity}</span></div>
+                            <div class="ticket-food-item"><span>${item.name || item.foodName || 'Food'} x${item.quantity || 1}</span><span>₹${(Number(item.price || 0)) * (Number(item.quantity || 1))}</span></div>
                         `).join('') : '<div class="ticket-food-item"><span>No food added</span><span>₹0</span></div>'}
                     </div>
-                    <div class="ticket-section-title">Delivery</div>
+                    <div class="ticket-section-title"><span style="color:var(--primary);">▼</span> Delivery</div>
                     <div class="ticket-delivery">${ticketData.deliveryWindow}</div>
                     <div class="ticket-total-row"><span>Total Paid</span><strong>₹${ticketData.totalAmount}</strong></div>
                     <div class="ticket-payment-status">${ticketData.paymentStatus}</div>
                     <div class="ticket-actions">
-                        <button class="btn btn-primary" onclick="downloadBookingTicket(${JSON.stringify(ticketData).replace(/'/g, '&apos;')})">Download Ticket</button>
-                        <button class="btn btn-outline" onclick="closeModal('ticket-modal')">Close</button>
+                        <button class="btn btn-primary" onclick="downloadTicketHTML('${ticketJSON}')">↓ Download Ticket</button>
+                        <button class="btn btn-outline" onclick="closeModal('ticket-modal')">← Back</button>
                     </div>
                 </div>
             `;
             openModal('ticket-modal');
         }
 
-        function downloadBookingTicket(ticketData) {
-            const html = `
-                <html>
-                <head>
-                    <title>BookMyShow Ticket</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; background:#f4f6fb; color:#111827; padding:32px; }
-                        .ticket { max-width:800px; margin:auto; border:2px solid #e23744; border-radius:16px; background:#fff; overflow:hidden; }
-                        .head { background:#e23744; color:#fff; padding:18px 20px; display:flex; justify-content:space-between; }
-                        .title { font-size:26px; font-weight:700; }
-                        .meta { padding:20px; }
-                        .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; }
-                        .total { display:flex; justify-content:space-between; padding:16px 0 0; font-size:22px; font-weight:700; }
-                    </style>
-                </head>
-                <body>
-                    <div class="ticket">
-                        <div class="head">
-                            <div class="title">BookMyShow</div>
-                            <div>Booking ID: ${ticketData.bookingId}</div>
+        function downloadTicketHTML(ticketJSON) {
+            try {
+                const ticketData = JSON.parse(ticketJSON.replace(/&quot;/g, '"'));
+                const html = `
+                    <html>
+                    <head>
+                        <title>BookMyShow Ticket - ${ticketData.bookingId}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; background:#f4f6fb; color:#111827; padding:32px; }
+                            .ticket { max-width:800px; margin:auto; border:2px solid #e23744; border-radius:16px; background:#fff; overflow:hidden; }
+                            .head { background:#e23744; color:#fff; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; }
+                            .title { font-size:26px; font-weight:700; }
+                            .meta { padding:20px; }
+                            .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; }
+                            .total { display:flex; justify-content:space-between; padding:16px 0 0; font-size:22px; font-weight:700; color:#e23744; }
+                            .status { font-size:12px; font-weight:700; text-transform:uppercase; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="ticket">
+                            <div class="head">
+                                <div>
+                                    <div class="title">BookMyShow</div>
+                                    <div class="status">${ticketData.status}</div>
+                                </div>
+                                <div>Booking ID: ${ticketData.bookingId}</div>
+                            </div>
+                            <div class="meta">
+                                <h2>Movie Ticket</h2>
+                                <div class="row"><span><strong>Movie</strong></span><strong>${ticketData.movieTitle}</strong></div>
+                                <div class="row"><span><strong>Theater</strong></span><strong>${ticketData.theaterName}</strong></div>
+                                <div class="row"><span><strong>Screen</strong></span><strong>${ticketData.screenName}</strong></div>
+                                <div class="row"><span><strong>Date</strong></span><strong>${ticketData.showDate}</strong></div>
+                                <div class="row"><span><strong>Time</strong></span><strong>${ticketData.startTime}${ticketData.endTime ? ' - ' + ticketData.endTime : ''}</strong></div>
+                                <div class="row"><span><strong>Seats</strong></span><strong>${ticketData.seats.map(seat => seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`).join(', ') || 'N/A'}</strong></div>
+                                <div class="row"><span><strong>Food</strong></span><strong>${ticketData.foodItems.length ? ticketData.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ') : 'No food added'}</strong></div>
+                                <div class="row"><span><strong>Delivery</strong></span><strong>${ticketData.deliveryWindow}</strong></div>
+                                <div class="total"><span>Total Paid</span><span>₹${ticketData.totalAmount}</span></div>
+                            </div>
                         </div>
-                        <div class="meta">
-                            <div class="row"><span>Movie</span><strong>${ticketData.movieTitle}</strong></div>
-                            <div class="row"><span>Theater</span><strong>${ticketData.theaterName}</strong></div>
-                            <div class="row"><span>Screen</span><strong>${ticketData.screenName}</strong></div>
-                            <div class="row"><span>Date</span><strong>${ticketData.showDate}</strong></div>
-                            <div class="row"><span>Time</span><strong>${ticketData.startTime}${ticketData.endTime ? ' - ' + ticketData.endTime : ''}</strong></div>
-                            <div class="row"><span>Seats</span><strong>${ticketData.seats.map(seat => seat.seatNumber).join(', ')}</strong></div>
-                            <div class="row"><span>Food</span><strong>${ticketData.foodItems.length ? ticketData.foodItems.map(item => `${item.name} x${item.quantity}`).join(', ') : 'No food added'}</strong></div>
-                            <div class="row"><span>Delivery</span><strong>${ticketData.deliveryWindow}</strong></div>
-                            <div class="total"><span>Total Paid</span><span>₹${ticketData.totalAmount}</span></div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `;
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `bookmyshow-ticket-${ticketData.bookingId}.html`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+                    </body>
+                    </html>
+                `;
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `BookMyShow-Ticket-${ticketData.bookingId}.html`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                showToast('Ticket downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('Ticket download failed:', error);
+                showToast('Could not download ticket', 'error');
+            }
         }
 
         function openRefundPolicyModal(id) {
@@ -191,23 +278,17 @@
             checkbox.onchange = () => {
                 button.disabled = !checkbox.checked;
             };
-            openModal('refund-modal');
-        }
-
-        async function cancelBooking(id) {
-            if (!confirm('Are you sure you want to cancel this ticket booking?')) return;
-            try {
-                await BookingAPI.cancel(id).catch(() => {});
+            button.onclick = async () => {
                 try {
-                    let localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
-                    localBookings = localBookings.filter(b => String(b.id) !== String(id));
-                    localStorage.setItem('bms_extra_bookings', JSON.stringify(localBookings));
-                } catch (e) {}
-                showToast('Booking cancelled successfully', 'success');
-                loadBookings();
-            } catch (e) {
-                showToast(e.message || 'Could not cancel booking', 'error');
-            }
+                    await BookingAPI.cancel(id).catch(() => {});
+                    closeModal('refund-modal');
+                    showToast('Booking cancelled successfully', 'success');
+                    loadBookings();
+                } catch (error) {
+                    showToast(error.message || 'Could not cancel booking', 'error');
+                }
+            };
+            openModal('refund-modal');
         }
 
         loadBookings();

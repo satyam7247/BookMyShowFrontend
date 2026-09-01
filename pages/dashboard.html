@@ -138,31 +138,17 @@
                 if (activeList.length === 0) {
                     showEmpty('dashboard-bookings', 'No active show bookings or snacks orders found');
                 } else {
-<<<<<<< HEAD
                     bookingsEl.innerHTML = activeList.map(b => `
                         <div class="show-card" style="border-left:5px solid var(--success); padding:1.4rem;">
                             <div class="show-info">
                                 <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
                                     <span class="badge" style="background:var(--success-glow); color:var(--success);">CONFIRMED TICKET</span>
                                     <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${b.id}</span>
-=======
-                    bookingsEl.innerHTML = upcoming.map(b => `
-                        <div class="card">
-                            <div class="card-body" style="display:flex; justify-content:space-between; align-items:center;">
-                                <div>
-                                    <strong><span style="color:var(--primary);">▶</span> ${b.show?.movie?.title || 'Movie'}</strong>
-                                    <div style="color:var(--text-muted); font-size:0.9rem;">${b.show?.showDate || ''} • ${b.show?.startTime || ''}</div>
-                                    <div style="color:var(--text-muted); font-size:0.9rem;">Seats: ${b.seats ? b.seats.map(s=>s.seatNumber).join(', ') : 'N/A'}</div>
                                 </div>
-                                <div style="text-align:right;">
-                                    <div style="font-weight:700;">₹${b.totalPrice || 0}</div>
-                                    <div style="margin-top:0.5rem;"><button class="btn btn-sm btn-danger" onclick="cancelBooking(${b.id})">Cancel</button></div>
->>>>>>> 50da209 (uixi)
-                                </div>
-                                <h4 style="font-size:1.3rem;">🎬 ${b.movieTitle}</h4>
-                                <p>🏛️ ${b.theaterName} — ${b.screenName}</p>
-                                <p>📅 ${b.showDate} &nbsp;|&nbsp; 🕐 ${b.startTime} &nbsp;|&nbsp; 💺 Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
-                                ${b.food ? `<p style="margin-top:0.25rem;">🍿 Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
+                                <h4 style="font-size:1.3rem;"><span style="color:var(--primary);">▶</span> ${b.movieTitle}</h4>
+                                <p><span style="color:var(--primary);">⌂</span> ${b.theaterName} — ${b.screenName}</p>
+                                <p><span style="color:var(--primary);">■</span> ${b.showDate} &nbsp;|&nbsp; <span style="color:var(--primary);">◐</span> ${b.startTime} &nbsp;|&nbsp; <span style="color:var(--primary);">◻</span> Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
+                                ${b.food ? `<p style="margin-top:0.25rem;"><span style="color:var(--primary);">♦</span> Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
                             </div>
                             <div class="show-meta" style="justify-content:space-between;">
                                 <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
@@ -187,20 +173,19 @@
                         movie: m,
                         poster: await getBestMoviePoster(m),
                     })));
-<<<<<<< HEAD
                     moviesEl.innerHTML = movies.slice(0, 4).map((m, i) => {
                         const poster = cards[i]?.poster || '';
                         return `
                             <a href="movie-detail.html?id=${m.id}" class="card">
                                 <div class="card-img ${poster ? '' : 'no-image'}">
-                                    ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='🎬';" />` : '🎬'}
+                                    ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='▶';" />` : '▶'}
                                 </div>
                                 <div class="card-body">
                                     <h3>${m.title}</h3>
                                     <p>${m.description || 'Experience in cinema halls near you.'}</p>
                                     <div class="badge-group">
                                         ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ''}
-                                        ${m.rating ? `<span class="badge badge-rating">⭐ ${m.rating}</span>` : ''}
+                                        ${m.rating ? `<span class="badge badge-rating"><span style="color:var(--primary);">★</span> ${m.rating}</span>` : ''}
                                     </div>
                                 </div>
                                 <div class="card-footer">
@@ -209,20 +194,6 @@
                             </a>
                         `;
                     }).join('');
-=======
-                    moviesEl.innerHTML = movies.map((m, i) => `
-                        <div class="card" style="width:180px; padding:0.5rem;">
-                            <div style="height:220px; display:flex; align-items:center; justify-content:center; font-size:3rem; overflow:hidden; border-radius:8px; background:linear-gradient(135deg, var(--bg-dark), var(--bg-light));">
-                                ${cards[i]?.poster ? `<img src="${cards[i].poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" style="width:100%; height:100%; object-fit:cover;" />` : '▶'}
-                            </div>
-                            <div style="padding:0.5rem;">
-                                <div style="font-weight:700;">${m.title}</div>
-                                <div style="color:var(--text-muted); font-size:0.85rem;">${m.genre || ''}</div>
-                                <a class="btn btn-sm btn-primary" href="movie-detail.html?id=${m.id}" style="display:inline-block; margin-top:0.5rem;">View / Book</a>
-                            </div>
-                        </div>
-                    `).join('');
->>>>>>> 50da209 (uixi)
                 }
             } catch (e) {
                 showEmpty('dashboard-movies', 'Could not load movies');

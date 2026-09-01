@@ -2,14 +2,8 @@
    BOOKMYSHOW CINEMATIC DESIGN SYSTEM & MOBILE RESPONSIVE STYLESHEET
    ========================================================================== */
 
-<<<<<<< HEAD
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
-
-/* ===== DESIGN TOKENS & CSS VARIABLES ===== */
-=======
 html { scroll-behavior: smooth; }
 
->>>>>>> 50da209 (uixi)
 :root {
     /* Brand Palette */
     --primary: #f84464;
@@ -85,20 +79,6 @@ body {
     background-color: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
-<<<<<<< HEAD
-    line-height: 1.5;
-    overflow-x: hidden;
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(248, 68, 100, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
-    background-attachment: fixed;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-=======
     line-height: 1.6;
     overflow-x: hidden;
 }
@@ -106,7 +86,6 @@ a {
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; }
 img { max-width: 100%; display: block; height: auto; }
->>>>>>> 50da209 (uixi)
 
 img {
     max-width: 100%;
@@ -451,19 +430,6 @@ button, input, select, textarea {
 .hero h1 {
     font-family: 'Outfit', sans-serif;
     font-size: 2.8rem;
-<<<<<<< HEAD
-    font-weight: 900;
-    line-height: 1.15;
-    letter-spacing: -1px;
-    margin-bottom: 0.75rem;
-    color: #ffffff;
-}
-
-.hero h1 span {
-    background: linear-gradient(135deg, var(--primary) 0%, #ff758c 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-=======
     font-weight: 800;
     margin-bottom: 0.5rem;
     word-wrap: break-word;
@@ -473,7 +439,6 @@ button, input, select, textarea {
 .hero h1 span {
     color: var(--primary);
     display: inline;
->>>>>>> 50da209 (uixi)
 }
 
 .hero p {
@@ -485,29 +450,13 @@ button, input, select, textarea {
 /* Search Bar */
 .search-bar {
     display: flex;
-<<<<<<< HEAD
-    align-items: center;
-    max-width: 620px;
-    margin: 0 auto;
-    background: var(--bg-glass-strong);
-    border: 1.5px solid var(--border-card);
-    border-radius: var(--radius-full);
-    padding: 0.35rem 0.35rem 0.35rem 1.15rem;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
-=======
     gap: 0.5rem;
     flex-wrap: wrap;
     width: 100%;
->>>>>>> 50da209 (uixi)
 }
 
 .search-bar input {
     flex: 1;
-<<<<<<< HEAD
-    background: transparent;
-    border: none;
-=======
     min-width: 200px;
     padding: 0.8rem 1.2rem;
     border-radius: 8px;
@@ -519,7 +468,6 @@ button, input, select, textarea {
     background-position: center;
     color: var(--text);
     font-size: 1rem;
->>>>>>> 50da209 (uixi)
     outline: none;
     color: var(--text-main);
     font-size: 0.95rem;
@@ -527,10 +475,6 @@ button, input, select, textarea {
     min-width: 0;
 }
 
-<<<<<<< HEAD
-.search-bar input::placeholder {
-    color: var(--text-muted);
-=======
 .search-bar input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(226,55,68,0.1);
@@ -539,7 +483,6 @@ button, input, select, textarea {
 .search-bar button {
     min-width: auto;
     flex-shrink: 0;
->>>>>>> 50da209 (uixi)
 }
 
 .search-bar .btn {
@@ -592,11 +535,6 @@ button, input, select, textarea {
 }
 
 .card-img.no-image {
-<<<<<<< HEAD
-    font-size: 3.5rem;
-    background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
-    color: var(--text-muted);
-=======
     display: grid;
     place-items: center;
     font-size: 3rem;
@@ -605,7 +543,6 @@ button, input, select, textarea {
 
 .card-img.no-image::before {
     content: '📹';
->>>>>>> 50da209 (uixi)
 }
 
 /* ===== ICON SYSTEM ===== */
@@ -701,10 +638,6 @@ button, input, select, textarea {
     font-weight: 800;
 }
 
-<<<<<<< HEAD
-.card-footer {
-    padding: 0.7rem 1rem 1rem;
-=======
 /* ===== MODAL ===== */
 .modal-overlay {
     display: none;
@@ -813,7 +746,6 @@ button, input, select, textarea {
     width: 36px;
     height: 36px;
     border-radius: 6px 6px 10px 10px;
->>>>>>> 50da209 (uixi)
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1346,23 +1278,15 @@ table td {
 }
 
 @media (max-width: 768px) {
-<<<<<<< HEAD
-    .navbar { padding: 0.65rem 1rem; }
-=======
     .navbar { padding: 0 1rem; min-height: 60px; }
     .navbar .logo { font-size: 1.4rem; }
->>>>>>> 50da209 (uixi)
     .nav-toggle { display: flex; }
     
     .nav-links {
         display: none;
         width: 100%;
         position: absolute;
-<<<<<<< HEAD
-        top: 100%;
-=======
         top: 60px;
->>>>>>> 50da209 (uixi)
         left: 0;
         right: 0;
         background: var(--bg-glass-strong);
@@ -1371,7 +1295,6 @@ table td {
         border-bottom: 1px solid var(--border-card);
         padding: 1rem 1.25rem;
         flex-direction: column;
-<<<<<<< HEAD
         align-items: stretch;
         gap: 0.5rem;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
@@ -1450,219 +1373,4 @@ table td {
     .grid-4 {
         grid-template-columns: 1fr;
     }
-=======
-        gap: 0;
-        padding: 1rem 0;
-        display: none !important;
-        box-shadow: var(--shadow);
-        z-index: 999;
-    }
-    .nav-links.open { display: flex !important; }
-    .nav-links a { 
-        padding: 1rem 1.5rem; 
-        border-radius: 0; 
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        width: 100%;
-        display: block;
-    }
-    .nav-links a:hover { background: rgba(226,55,68,0.1); }
-    .nav-user { display: none; }
-    .city-bar { padding: 0.8rem 1rem; gap: 0.5rem; }
-    .city-chip { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
-    .hero { padding: 2rem 1.5rem; min-height: 320px; }
-    .hero h1 { font-size: 2rem; }
-    .hero p { font-size: 0.95rem; }
-    .hero-movie-info { padding: 1.2rem 1rem; }
-    #hero-movie-title { font-size: 1.3rem; }
-    .search-bar { flex-direction: column; max-width: 100%; }
-    .search-bar input, .search-bar button { width: 100%; }
-    .container { padding: 1.5rem 1rem; }
-    .section-title { font-size: 1.3rem; }
-    .card-img { height: 240px; }
-    .card-body { padding: 1rem; }
-    .card-body h3 { font-size: 1rem; }
-    .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    .badge { font-size: 0.7rem; }
-    .seat-row { flex-wrap: wrap; justify-content: center; }
-    .seat-row-label { width: auto; margin-bottom: 0.5rem; }
-    .modal { max-width: 95%; }
-    .data-table { display: block; overflow-x: auto; }
-    .show-card { flex-direction: column; gap: 0.8rem; text-align: left; padding: 1rem; }
-    .show-meta { text-align: left; }
-    .form-group { min-width: 0; width: 100%; }
-}
-
-/* ===== STAT CARDS ===== */
-.stat-card {
-    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-light) 100%);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(233, 69, 96, 0.15);
-    text-align: center;
-    transition: var(--transition);
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(233, 69, 96, 0.4);
-    box-shadow: 0 8px 24px rgba(233, 69, 96, 0.25);
-}
-
-.stat-card.stat-success {
-    border-color: rgba(46, 204, 113, 0.3);
-}
-
-.stat-card.stat-success:hover {
-    border-color: rgba(46, 204, 113, 0.6);
-    box-shadow: 0 8px 24px rgba(46, 204, 113, 0.2);
-}
-
-.stat-card.stat-warning {
-    border-color: rgba(243, 156, 18, 0.3);
-}
-
-.stat-card.stat-warning:hover {
-    border-color: rgba(243, 156, 18, 0.6);
-    box-shadow: 0 8px 24px rgba(243, 156, 18, 0.2);
-}
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-}
-
-.stat-card.stat-success .stat-value {
-    color: var(--success);
-}
-
-.stat-card.stat-warning .stat-value {
-    color: var(--warning);
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ===== BADGES ===== */
-.badge-success {
-    background: rgba(46, 204, 113, 0.2);
-    color: var(--success);
-    border: 1px solid rgba(46, 204, 113, 0.5);
-}
-
-.badge-danger {
-    background: rgba(233, 69, 96, 0.2);
-    color: var(--accent);
-    border: 1px solid rgba(233, 69, 96, 0.5);
-}
-
-.badge-warning {
-    background: rgba(243, 156, 18, 0.2);
-    color: var(--warning);
-    border: 1px solid rgba(243, 156, 18, 0.5);
-}
-
-.badge-info {
-    background: rgba(52, 152, 219, 0.2);
-    color: #3498db;
-    border: 1px solid rgba(52, 152, 219, 0.5);
-}
-
-/* ===== EMPTY STATE ===== */
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    background: var(--bg-card);
-    border-radius: 12px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.empty-state p {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-@media (max-width: 600px) {
-    .navbar { padding: 0 0.75rem; }
-    .navbar .logo { font-size: 1.2rem; }
-    .nav-links { top: 60px; }
-    .nav-links a { padding: 0.8rem 1.2rem; font-size: 0.9rem; }
-    .city-bar { padding: 0.6rem 0.75rem; }
-    .city-chip { padding: 0.35rem 0.7rem; font-size: 0.7rem; }
-    .hero { padding: 1.5rem 1rem; min-height: 300px; }
-    .hero h1 { font-size: 1.7rem; line-height: 1.3; }
-    .hero p { font-size: 0.9rem; margin-bottom: 1.5rem; }
-    #hero-movie-title { font-size: 1.2rem; }
-    .search-bar { gap: 0.6rem; }
-    .search-bar input { padding: 0.7rem 1rem; }
-    .search-bar button { padding: 0.7rem 1rem; }
-    .container { padding: 1rem 0.75rem; }
-    .section-title { font-size: 1.2rem; }
-    .card-img { height: 200px; }
-    .card-body { padding: 0.8rem; }
-    .card-body h3 { font-size: 0.95rem; }
-    .card-body p { font-size: 0.75rem; }
-    .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 0.8rem; }
-    .badge { font-size: 0.65rem; }
-    .seat { width: 28px; height: 28px; font-size: 0.5rem; }
-    .modal { max-width: 98%; padding: 1.2rem; }
-    .modal h2 { font-size: 1.1rem; }
-    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.75rem; }
-    .form-group input, .form-group select, .form-group textarea { font-size: 16px; padding: 0.65rem 0.9rem; }
-    .data-table th, .data-table td { font-size: 0.75rem; padding: 0.5rem 0.6rem; }
-    .stat-value { font-size: 1.8rem; }
-    .empty-state { padding: 2rem 1rem; }
-}
-
-@media (max-width: 480px) {
-    .navbar { padding: 0 0.5rem; min-height: 55px; }
-    .navbar .logo { font-size: 1.1rem; }
-    .nav-links { top: 55px; padding: 0.5rem 0; }
-    .nav-links a { padding: 0.7rem 1rem; font-size: 0.85rem; }
-    .hero { 
-        padding: 1.2rem 0.8rem; 
-        min-height: 280px;
-    }
-    .hero h1 { font-size: 1.5rem; line-height: 1.2; margin-bottom: 0.3rem; }
-    .hero p { font-size: 0.85rem; margin-bottom: 1.2rem; }
-    #hero-movie-title { font-size: 1rem; }
-    .hero-movie-info { padding: 0.8rem 0.5rem; }
-    .search-bar { gap: 0.5rem; margin: 0 auto; }
-    .search-bar input { padding: 0.65rem 0.9rem; font-size: 0.9rem; }
-    .search-bar button { padding: 0.65rem 0.9rem; font-size: 0.8rem; white-space: nowrap; }
-    .container { padding: 0.75rem 0.5rem; }
-    .section-title { font-size: 1.1rem; margin-bottom: 1rem; }
-    .card-img { height: 180px; }
-    .card-body { padding: 0.7rem; }
-    .card-body h3 { font-size: 0.9rem; }
-    .card-body p { font-size: 0.7rem; }
-    .badge { font-size: 0.6rem; padding: 0.1rem 0.4rem; }
-    .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 0.6rem; }
-    .seat { width: 24px; height: 24px; font-size: 0.45rem; }
-    .seat-row { gap: 0.2rem; }
-    .seat-legend { gap: 0.8rem; }
-    .modal { max-width: 100%; padding: 1rem; }
-    .modal h2 { font-size: 1rem; margin-bottom: 1rem; }
-    .btn { padding: 0.5rem 1rem; font-size: 0.8rem; }
-    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.7rem; }
-    .form-group input, .form-group select, .form-group textarea { font-size: 16px; padding: 0.6rem 0.8rem; }
-    .data-table { font-size: 0.7rem; }
-    .data-table th, .data-table td { padding: 0.4rem 0.5rem; }
-    .show-card { padding: 0.8rem; }
-    .stat-card { padding: 1rem; }
-    .stat-value { font-size: 1.6rem; }
-    .stat-label { font-size: 0.75rem; }
-    .booking-summary { padding: 1rem; }
-    .toast-container { top: 60px; right: 10px; }
-    .toast { padding: 0.6rem 1rem; font-size: 0.85rem; min-width: 230px; }
-    .empty-state { padding: 1.5rem 0.8rem; }
->>>>>>> 50da209 (uixi)
 }

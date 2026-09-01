@@ -234,19 +234,14 @@ function showLoading(containerId) {
 
 function showEmpty(containerId, message = 'No data found') {
     const el = document.getElementById(containerId);
-<<<<<<< HEAD
     if (el) {
         el.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-card); animation: fadeIn 0.4s ease;">
-                <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--primary-glow));">🎬</div>
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.5rem;">${message}</h3>
-                <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 460px; margin: 0 auto 1.5rem;">No records found. You can add new entries from the Admin Panel.</p>
+            <div class="empty-state">
+                <div class="icon" style="color:var(--primary);">▶</div>
+                <p>${message}</p>
             </div>
         `;
     }
-=======
-    if (el) el.innerHTML = `<div class="empty-state"><div class="icon">▶</div><p>${message}</p></div>`;
->>>>>>> 50da209 (uixi)
 }
 
 // ===== MODAL HELPERS =====

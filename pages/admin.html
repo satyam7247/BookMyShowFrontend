@@ -29,28 +29,28 @@
         <!-- STATS COUNTER GRID -->
         <div class="admin-stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">🌆</div>
+                <div class="stat-icon">⌂</div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-cities">0</div>
                     <div class="stat-label">Active Cities</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🎬</div>
+                <div class="stat-icon">▶</div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-movies">0</div>
                     <div class="stat-label">Total Movies</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🏛️</div>
+                <div class="stat-icon">⌂</div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-theaters">0</div>
                     <div class="stat-label">Multiplexes</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🍿</div>
+                <div class="stat-icon">♦</div>
                 <div class="stat-info">
                     <div class="stat-value" id="stat-shows">0</div>
                     <div class="stat-label">Active Shows</div>
@@ -60,12 +60,12 @@
 
         <!-- TABS -->
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('cities', this)">🌆 Cities</button>
-            <button class="tab" onclick="switchTab('movies', this)">🎬 Movies</button>
-            <button class="tab" onclick="switchTab('theaters', this)">🏛️ Theaters</button>
-            <button class="tab" onclick="switchTab('screens', this)">🖥️ Screens</button>
-            <button class="tab" onclick="switchTab('seats', this)">💺 Seats</button>
-            <button class="tab" onclick="switchTab('shows', this)">🍿 Shows</button>
+            <button class="tab active" onclick="switchTab('cities', this)"><span style="color:var(--primary);">⌂</span> Cities</button>
+            <button class="tab" onclick="switchTab('movies', this)"><span style="color:var(--primary);">▶</span> Movies</button>
+            <button class="tab" onclick="switchTab('theaters', this)"><span style="color:var(--primary);">⌂</span> Theaters</button>
+            <button class="tab" onclick="switchTab('screens', this)"><span style="color:var(--primary);">●</span> Screens</button>
+            <button class="tab" onclick="switchTab('seats', this)"><span style="color:var(--primary);">◻</span> Seats</button>
+            <button class="tab" onclick="switchTab('shows', this)"><span style="color:var(--primary);">♦</span> Shows</button>
         </div>
 
         <!-- ===== CITIES TAB ===== -->
@@ -565,8 +565,6 @@
         // ===== INIT =====
         async function init() {
             await Promise.all([loadCities(), loadMovies(), loadTheaters(), loadScreens(), loadShows()]);
-<<<<<<< HEAD
-=======
             await loadBookingsHistory();
         }
 
@@ -577,10 +575,9 @@
             try {
                 const users = await UserAPI.getAll();
                 const shows = await ShowAPI.getAll();
-                
+
                 allBookings = [];
-                
-                // Get bookings for each user
+
                 for (const user of users) {
                     try {
                         const userBookings = await BookingAPI.getByUser(user.id);
@@ -596,9 +593,8 @@
                     }
                 }
 
-                // Apply filters
                 let filteredBookings = allBookings.slice();
-                
+
                 const statusFilter = document.getElementById('booking-status-filter')?.value;
                 if (statusFilter) {
                     filteredBookings = filteredBookings.filter(b => b.paymentStatus === statusFilter);
@@ -616,10 +612,7 @@
                     });
                 }
 
-                // Update stats
                 updateBookingStats(allBookings);
-                
-                // Render table
                 renderBookingsTable(filteredBookings);
             } catch (e) {
                 console.error('Error loading bookings', e);
@@ -642,7 +635,7 @@
 
         function renderBookingsTable(bookings) {
             const container = document.getElementById('bookings-table');
-            
+
             if (bookings.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>📭 No bookings found</p></div>';
                 return;
@@ -673,11 +666,11 @@
                 const seats = booking.seatNumbers || booking.seats || 'N/A';
                 const bookingDate = new Date(booking.createdAt || booking.bookingDate);
                 const status = booking.paymentStatus || 'PENDING';
-                const statusBadge = status === 'CONFIRMED' 
-                    ? '<span class="badge badge-success">✅ Confirmed</span>'
+                const statusBadge = status === 'CONFIRMED'
+                    ? '<span class="badge badge-success">✓ Confirmed</span>'
                     : status === 'CANCELLED'
-                    ? '<span class="badge badge-danger">❌ Cancelled</span>'
-                    : '<span class="badge badge-warning">⏳ Pending</span>';
+                    ? '<span class="badge badge-danger">✕ Cancelled</span>'
+                    : '<span class="badge badge-warning">◔ Pending</span>';
 
                 html += `<tr>
                     <td><strong>#${booking.id}</strong></td>
@@ -707,7 +700,7 @@
 
         function searchBookingsByUser() {
             const searchTerm = document.getElementById('booking-user-search')?.value.toLowerCase() || '';
-            
+
             if (!searchTerm) {
                 loadBookingsHistory();
                 return;
@@ -715,7 +708,7 @@
 
             const filtered = allBookings.filter(b => {
                 const user = b.user || {};
-                return (user.email || '').toLowerCase().includes(searchTerm) || 
+                return (user.email || '').toLowerCase().includes(searchTerm) ||
                        (user.name || '').toLowerCase().includes(searchTerm);
             });
 
@@ -736,11 +729,11 @@
             const screen = show.screen || {};
             const status = booking.paymentStatus || 'PENDING';
             const bookingDate = new Date(booking.createdAt || booking.bookingDate);
-            
+
             const details = `
             <div style="text-align:left; padding:1rem; line-height:1.8;">
                 <h3 style="margin-bottom:1rem; color:var(--primary);">📋 Booking Details - #${booking.id}</h3>
-                
+
                 <h4 style="color:var(--accent); margin-top:1.5rem;">👤 User Information</h4>
                 <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
                 <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
@@ -763,12 +756,12 @@
                 <p><strong>Total Price:</strong> <span style="color:var(--success); font-size:1.1rem; font-weight:bold;">₹${booking.totalPrice || 0}</span></p>
 
                 <h4 style="color:var(--accent); margin-top:1.5rem;">💳 Payment Information</h4>
-                <p><strong>Status:</strong> 
-                    ${status === 'CONFIRMED' 
-                        ? '<span style="color:var(--success);">✅ Confirmed (Paid)</span>'
+                <p><strong>Status:</strong>
+                    ${status === 'CONFIRMED'
+                        ? '<span style="color:var(--success);">✓ Confirmed (Paid)</span>'
                         : status === 'CANCELLED'
-                        ? '<span style="color:var(--accent);">❌ Cancelled</span>'
-                        : '<span style="color:var(--warning);">⏳ Pending Payment</span>'
+                        ? '<span style="color:var(--accent);">✕ Cancelled</span>'
+                        : '<span style="color:var(--warning);">◔ Pending Payment</span>'
                     }
                 </p>
                 <p><strong>Payment Method:</strong> ${booking.paymentMethod || 'N/A'}</p>
@@ -794,7 +787,6 @@
                 console.error('Cancel booking failed', e);
                 showToast(`Failed to cancel booking: ${e.message}`, 'error');
             }
->>>>>>> 50da209 (uixi)
         }
     </script>
 </body>
