@@ -111,6 +111,7 @@
         if (heroSlideTimer) clearInterval(heroSlideTimer);
         currentHeroMovie = null;
         document.getElementById("hero-slideshow").style.backgroundImage = "none";
+        document.documentElement.style.setProperty("--hero-img", "none");
         document.documentElement.style.removeProperty("--search-bg-image");
         showLoading("movies-grid");
         try {
@@ -238,6 +239,7 @@
         if (heroSlides.length === 0) {
           currentHeroMovie = null;
           heroBg.style.backgroundImage = "none";
+          document.documentElement.style.setProperty("--hero-img", "none");
           document.documentElement.style.removeProperty("--search-bg-image");
           return;
         }
@@ -254,7 +256,7 @@
           const slide = heroSlides[heroSlideIndex];
           const imageUrl = slide.imageUrl;
           currentHeroMovie = slide.movie;
-          heroBg.style.backgroundImage = `url("${imageUrl}")`;
+          document.documentElement.style.setProperty("--hero-img", `url("${imageUrl}")`);
           document.documentElement.style.setProperty("--search-bg-image", `url("${imageUrl}")`);
           heroSlideIndex = (heroSlideIndex + 1) % heroSlides.length;
         };
