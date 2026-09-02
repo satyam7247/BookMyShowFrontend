@@ -222,7 +222,6 @@
                         </div>
                     </div>
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                        <button class="btn btn-outline btn-lg" onclick="openProfileModal()"><i class="fa-regular fa-user"></i> My Profile</button>
                         <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
                     </div>
                 </div>
@@ -262,6 +261,12 @@
             renderWelcomeCard();
             await refreshUserFromBackend();
             renderWelcomeCard();
+
+            // Agar "My Profile" nav button se aaye (#profile), to modal auto-open karo
+            if (window.location.hash === '#profile') {
+                openProfileModal();
+                history.replaceState(null, '', window.location.pathname);
+            }
 
             // Load bookings
             const bookingsEl = document.getElementById('dashboard-bookings');
