@@ -437,18 +437,20 @@ button, input, select, textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url("/images/movie.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
     background-color: rgba(11, 15, 25, 0.95);
     border-bottom: 1px solid var(--border-subtle);
     cursor: pointer;
 }
 
 .hero-slideshow {
-    display: none; /* Hero ab fixed movie.jpg background use karta hai */
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0.8; /* Image thodi clear dikhe */
+    transition: background-image 1s ease-in-out;
 }
 
 .hero::after {
