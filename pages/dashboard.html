@@ -263,6 +263,13 @@
                 openProfileModal();
                 history.replaceState(null, '', window.location.pathname);
             }
+            // Dashboard pe hi ho aur My Profile dobara click karo to bhi modal khule
+            window.addEventListener('hashchange', () => {
+                if (window.location.hash === '#profile') {
+                    openProfileModal();
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            });
 
             // Load bookings
             const bookingsEl = document.getElementById('dashboard-bookings');

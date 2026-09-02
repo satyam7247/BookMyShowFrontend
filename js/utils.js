@@ -50,7 +50,7 @@ function updateNavUser() {
     ensureCoreNavLinks(navLinks);
     
     const adminLink = userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-sm btn-primary">Admin Panel</a>` : '';
-    const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-sm btn-outline">My Profile</a>` : '';
+    const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-sm btn-outline" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}">My Profile</a>` : '';
     
     if (user) {
         const roleLabel = user.role ? `<span class="role-tag">${user.role}</span>` : '';
@@ -75,7 +75,7 @@ function updateNavUser() {
                     ${roleLabel}
                 </div>
                 ${userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-primary btn-block">Admin Panel</a>` : ''}
-                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-outline btn-block">My Profile</a>` : ''}
+                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-outline btn-block" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}">My Profile</a>` : ''}
                 <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
             `;
             navLinks.appendChild(mobileSection);
