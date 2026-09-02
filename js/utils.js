@@ -53,7 +53,16 @@ function updateNavUser() {
     const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-sm btn-outline" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}">My Profile</a>` : '';
     
     if (user) {
+        // Chhoti circular profile photo (localStorage me saved) — na ho to initial letter
+        let avatarHtml;
+        try {
+            const photo = localStorage.getItem(`bms_profile_photo_${user.id}`);
+            avatarHtml = photo
+                ? `<img src="${photo}" alt="Me" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" />`
+                : `<span style="width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; border:2px solid var(--primary);">${(user.name || 'U').charAt(0).toUpperCase()}</span>`;
+        } catch (e) { avatarHtml = ''; }
         const userHtml = `
+            <a href="${getPagePath('pages/dashboard.html')}#profile" title="My Profile" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}" style="display:inline-flex; align-items:center;">${avatarHtml}</a>
             ${adminLink}
             ${dashboardLink}
             <button class="btn btn-sm btn-outline nav-logout" onclick="logout()">Logout</button>

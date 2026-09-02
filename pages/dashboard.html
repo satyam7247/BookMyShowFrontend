@@ -199,6 +199,8 @@
                     const welcomeAvatar = document.getElementById('welcome-avatar');
                     if (welcomeAvatar) renderAvatar(welcomeAvatar, mergedProfile());
                     showToast('Profile photo updated', 'success');
+                    // Navbar wala chhota avatar bhi turant update ho
+                    if (typeof updateNavUser === 'function') updateNavUser();
                 } catch (e) {
                     showToast('Could not save photo (storage full)', 'error');
                 }
