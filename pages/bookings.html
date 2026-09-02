@@ -40,31 +40,58 @@
             return seatData.seatNumber || seatData.seat || `${seatData.row || ''}${seatData.col || ''}` || 'N/A';
         }
 
-                function formatBookingCard(booking) {
+            function formatBookingCard(booking) {
             const seats = getBookingSeatText(booking.seats || booking.seatNumbers || booking.ticketSeats);
             const foodText = Array.isArray(booking.foodItems) && booking.foodItems.length
                 ? booking.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ')
-                : (booking.food ? booking.food : 'No food added');
+                : (booking.food ? booking.food : 'No snacks added');
 
             return `
-                <div class="card" style="border: 1px solid rgba(46,204,113,0.3);">
-                    <div class="card-body" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
-                        <div>
-                            <h3 style="margin-bottom:0.35rem;"><i class="fa-solid fa-clapperboard"></i> ${booking.show?.movie?.title || booking.movieTitle || 'Movie'}</h3>
-                            <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.7;">
-                                <i class="fa-solid fa-building-columns"></i> ${booking.show?.screen?.theater?.name || booking.theaterName || ''} — ${booking.show?.screen?.name || booking.screenName || ''}<br>
-                                <i class="fa-regular fa-calendar-days"></i> ${booking.show?.showDate || booking.showDate || ''} &nbsp; <i class="fa-regular fa-clock"></i> ${booking.show?.startTime || booking.startTime || ''}<br>
-                                <i class="fa-solid fa-couch"></i> Seats: ${seats}<br>
-                                <i class="fa-solid fa-hotdog"></i> Food: ${foodText}<br>
-                                <i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Booked: ${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'Just now'}
-                            </p>
-                        </div>
-                        <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:1rem;">
-                            <div>
-                                <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Total Paid</div>
-                                <div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:var(--success);">₹${booking.totalPrice || 0}</div>
+                <div class="card" style="border: 1px solid rgba(255,255,255,0.1); background: var(--bg-surface); padding: 0; overflow: hidden; position: relative; border-radius: var(--radius-lg);">
+                    <div style="display: flex; flex-wrap: wrap;">
+                        <!-- Left Part (Movie Info) -->
+                        <div style="flex: 2; padding: 1.5rem; min-width: 280px; border-right: 2px dashed rgba(255,255,255,0.1); position: relative;">
+                            <div class="badge" style="background: var(--primary-subtle); color: var(--primary); margin-bottom: 0.75rem; font-weight: 800; border: 1px solid var(--primary-glow);">
+                                <i class="fa-solid fa-ticket"></i> CONFIRMED TICKET
                             </div>
-                            <button class="btn btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${booking.id}')"><i class="fa-solid fa-trash-can"></i> Cancel Ticket</button>
+                            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; margin-bottom: 0.6rem; color: #fff; letter-spacing: -0.5px;">
+                                ${booking.show?.movie?.title || booking.movieTitle || 'Movie Title'}
+                            </h3>
+                            <div style="display: flex; flex-direction: column; gap: 0.6rem; color: var(--text-secondary); font-size: 0.95rem;">
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <i class="fa-solid fa-building-columns" style="width: 20px; color: var(--primary); text-align:center;"></i> 
+                                    <span>${booking.show?.screen?.theater?.name || booking.theaterName || 'Cinema Hall'} — <span style="color:var(--text-main);">${booking.show?.screen?.name || booking.screenName || 'Audi'}</span></span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <i class="fa-regular fa-calendar-days" style="width: 20px; color: var(--primary); text-align:center;"></i> 
+                                    <span>${booking.show?.showDate || booking.showDate || 'Date'} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color: var(--primary);"></i> ${booking.show?.startTime || booking.startTime || 'Time'}</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <i class="fa-solid fa-couch" style="width: 20px; color: var(--primary); text-align:center;"></i> 
+                                    <span>Seats: <strong style="color: var(--primary); font-size: 1.1rem;">${seats}</strong></span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <i class="fa-solid fa-hotdog" style="width: 20px; color: var(--accent); text-align:center;"></i> 
+                                    <span>Snacks: <span style="color:var(--accent); font-weight:600;">${foodText}</span></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Ticket Circles (Visual Effect) -->
+                            <div style="position: absolute; right: -11px; top: 50%; transform: translateY(-50%) translateY(-60px); width: 22px; height: 22px; background: var(--bg-main); border-radius: 50%; z-index: 2;"></div>
+                            <div style="position: absolute; right: -11px; top: 50%; transform: translateY(-50%) translateY(60px); width: 22px; height: 22px; background: var(--bg-main); border-radius: 50%; z-index: 2;"></div>
+                        </div>
+
+                        <!-- Right Part (Price & Actions) -->
+                        <div style="flex: 1; padding: 1.5rem; background: rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-width: 180px;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.4rem; font-weight: 700;">Total Amount</div>
+                            <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--success); margin-bottom: 1.25rem; text-shadow: 0 0 20px var(--success-glow);">₹${booking.totalPrice || 0}</div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                                <button class="btn btn-sm btn-outline" style="border-color: var(--danger); color: var(--danger); width: 100%; font-weight: 700;" onclick="cancelBooking('${booking.id}')">
+                                    <i class="fa-solid fa-trash-can"></i> Cancel Ticket
+                                </button>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">BOOKING ID: #${booking.id}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
