@@ -138,26 +138,30 @@
             const user = getLoggedInUser();
             const cacheKey = `bms_user_city_${user?.id || 'guest'}`;
             if (savedCity) { el.textContent = savedCity; return; }
+            // Pehle cached city dikha do (turant), phir fresh GPS se update karo
             const cached = localStorage.getItem(cacheKey);
-            if (cached) { el.textContent = cached; return; }
-            if (!navigator.geolocation) { el.textContent = '—'; return; }
-            el.textContent = 'Detecting...';
+            if (cached) el.textContent = cached;
+            if (!navigator.geolocation) { if (!cached) el.textContent = '—'; return; }
+            if (!cached) el.textContent = 'Detecting...';
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 try {
                     const { latitude, longitude } = pos.coords;
                     // Free reverse-geocode API — koi API key nahi chahiye
                     const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
                     const data = await res.json();
-                    const city = data.city || data.locality || data.principalSubdivision || '—';
-                    el.textContent = city;
-                    localStorage.setItem(cacheKey, city);
+                    const city = data.city || data.locality || data.principalSubdivision;
+                    if (city) {
+                        el.textContent = city + ' (approx)';
+                        localStorage.setItem(cacheKey, city);
+                    } else if (!cached) {
+                        el.textContent = '—';
+                    }
                 } catch (e) {
-                    el.textContent = '—';
+                    if (!cached) el.textContent = '—';
                 }
             }, () => {
-                // User ne location permission deny ki
-                el.textContent = '—';
-            }, { timeout: 10000 });
+                if (!cached) el.textContent = '—';
+            }, { timeout: 10000, enableHighAccuracy: true });
         }
 
         function closeProfileModal() {
