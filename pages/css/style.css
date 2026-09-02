@@ -582,6 +582,17 @@ button, input, select, textarea {
     color: #e91e63;
     animation: like-pop 0.3s ease;
 }
+.btn-like svg {
+    display: block;
+}
+.btn-like.liked svg path {
+    fill: #e91e63;
+}
+/* Detail page like button — bada icon + count */
+.btn-like-detail svg {
+    height: 30px;
+    width: 30px;
+}
 @keyframes like-pop {
     0% { transform: scale(1); }
     50% { transform: scale(1.35); }

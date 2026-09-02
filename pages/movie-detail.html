@@ -351,10 +351,15 @@
                                 ${movie.releaseDate ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);"><i class="fa-regular fa-calendar-days"></i> ${movie.releaseDate}</span>` : ''}
                             </div>
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
-                            ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
+                            <div class="detail-actions" style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem;">
+                                ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
+                                <span class="btn btn-outline btn-lg btn-like btn-like-detail ${isMovieLikedByUser(movie.id) ? 'liked' : ''}" data-movie-id="${movie.id}" onclick="toggleMovieLike(event, '${movie.id}')">${heartIconSVG()} <span class="like-count" style="font-size:1.1rem;">${getMovieLikeCount(movie)}</span></span>
+                            </div>
                         </div>
                     </div>
                 `;
+                window.__movieLikeBase = window.__movieLikeBase || {};
+                window.__movieLikeBase[String(movie.id)] = getMovieLikeCount(movie) - (getLikeStore()[String(movie.id)] || 0);
                 loadShows();
             } catch (e) {
                 document.getElementById('movie-detail-hero').innerHTML = `
