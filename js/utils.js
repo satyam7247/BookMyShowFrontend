@@ -75,7 +75,6 @@ function updateNavUser() {
             mobileSection.className = 'mobile-user-section';
             mobileSection.innerHTML = `
                 ${userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-primary btn-block">Admin Panel</a>` : ''}
-                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-outline btn-block" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}">My Profile</a>` : ''}
                 <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
             `;
             navLinks.appendChild(mobileSection);
