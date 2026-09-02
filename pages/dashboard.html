@@ -81,11 +81,17 @@
     <script src="../js/utils.js"></script>
     <script>
         // ===== PROFILE MENU & MODAL =====
-        function getProfileOverrides() {
+        // Profile fields ka source-of-truth backend hai (session 'bms_user').
+        // Refresh par backend se taaza data laate hain taaki sab devices par same dikhe.
+        async function refreshUserFromBackend() {
+            const user = getLoggedInUser();
+            if (!user || !user.id) return;
             try {
-                const user = getLoggedInUser();
-                return JSON.parse(localStorage.getItem(`bms_profile_${user.id}`) || '{}');
-            } catch (e) { return {}; }
+                const fresh = await UserAPI.getById(user.id);
+                if (fresh && (fresh.name || fresh.email)) {
+                    setLoggedInUser({ ...user, ...fresh });
+                }
+            } catch (e) { /* offline / endpoint missing — session data use karo */ }
         }
 
         function getProfilePhoto() {
@@ -96,9 +102,7 @@
         }
 
         function mergedProfile() {
-            const user = getLoggedInUser();
-            const o = getProfileOverrides();
-            return { ...user, ...o };
+            return getLoggedInUser() || {};
         }
 
         function renderAvatar(el, profile) {
@@ -184,23 +188,23 @@
                 city: document.getElementById('edit-city').value.trim()
             };
             if (!updated.name || !updated.email) { showToast('Name and Email are required', 'error'); return; }
+            const user = getLoggedInUser();
+            // Pehle backend me save karo (sab devices par sync ke liye)
             try {
-                const user = getLoggedInUser();
-                try { await UserAPI.update(user.id, { ...user, ...updated }); } catch (e) { /* best-effort */ }
-                const o = getProfileOverrides();
-                localStorage.setItem(`bms_profile_${user.id}`, JSON.stringify({ ...o, ...updated }));
-                try {
-                    const session = JSON.parse(localStorage.getItem('bms_user') || 'null');
-                    if (session && String(session.id) === String(user.id)) {
-                        localStorage.setItem('bms_user', JSON.stringify({ ...session, ...updated }));
-                    }
-                } catch (e) {}
-                showToast('Profile updated successfully', 'success');
-                openProfileModal();
-                window.renderWelcomeCard && window.renderWelcomeCard();
+                const saved = await UserAPI.update(user.id, { ...user, ...updated });
+                if (saved && (saved.name || saved.id)) {
+                    setLoggedInUser({ ...user, ...saved });
+                } else {
+                    setLoggedInUser({ ...user, ...updated });
+                }
+                showToast('Profile saved', 'success');
             } catch (e) {
-                showToast(e.message || 'Could not save profile', 'error');
+                // Backend endpoint nahi hai — sirf is device par save hoga
+                setLoggedInUser({ ...user, ...updated });
+                showToast('Saved on this device only — backend user-update endpoint missing', 'error');
             }
+            openProfileModal();
+            window.renderWelcomeCard && window.renderWelcomeCard();
         }
 
         // ===== WELCOME CARD (with profile photo) =====
@@ -255,6 +259,8 @@
                 return;
             }
 
+            renderWelcomeCard();
+            await refreshUserFromBackend();
             renderWelcomeCard();
 
             // Load bookings
