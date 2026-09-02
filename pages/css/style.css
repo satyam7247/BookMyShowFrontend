@@ -168,7 +168,7 @@ button, input, select, textarea {
 
 @media (min-width: 900px) {
     .grid-4 {
-        grid-template-columns: repeat(5, 1fr); /* exactly 5 per row, locked from 900px up */
+        grid-template-columns: repeat(4, 1fr); /* exactly 4 per row - cards bade dikhe */
     }
 }
 
@@ -554,7 +554,7 @@ button, input, select, textarea {
 .card-img {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9; /* landscape image - screenshot jaisa */
+    aspect-ratio: 3 / 4; /* portrait poster - image badi aur clear dikhe */
     background: var(--bg-surface);
     overflow: hidden;
     display: flex;
