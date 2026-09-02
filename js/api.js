@@ -129,7 +129,10 @@ const MovieAPI = {
     update: (id, data) => apiPutFallback([`/movies/${id}`, `/movies/update/${id}`, `/movies/${id}/update`], data),
     delete: (id) => apiDelete(`/movies/${id}`),
     // Best-effort share count persistence; silently fails if the backend has no such endpoint
-    incrementShare: (id) => apiPost(`/movies/${id}/share`, {})
+    incrementShare: (id) => apiPost(`/movies/${id}/share`, {}),
+    // Best-effort like persistence; silently fails if the backend has no such endpoint
+    incrementLike: (id) => apiPost(`/movies/${id}/like`, {}),
+    removeLike: (id) => apiDelete(`/movies/${id}/like`).catch(() => {})
 };
 
 const TheaterAPI = {
