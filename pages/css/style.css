@@ -554,7 +554,7 @@ button, input, select, textarea {
 .card-img {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4; /* image ki height thodi badhai */
+    aspect-ratio: 1 / 1; /* height kam */
     background: var(--bg-surface);
     overflow: hidden;
     display: flex;
