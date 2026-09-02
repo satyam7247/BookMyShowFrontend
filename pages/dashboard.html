@@ -117,7 +117,7 @@
         document.addEventListener('click', () => document.getElementById('profile-dropdown')?.classList.remove('open'));
 
         function openProfileModal() {
-            document.getElementById('profile-dropdown').classList.remove('open');
+            document.getElementById('profile-dropdown')?.classList.remove('open');
             const profile = mergedProfile();
             renderAvatar(document.getElementById('profile-avatar'), profile);
             document.getElementById('profile-modal-name').textContent = profile.name || 'Movie Lover';
