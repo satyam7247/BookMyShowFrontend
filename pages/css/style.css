@@ -554,7 +554,7 @@ button, input, select, textarea {
 .card-img {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 5; /* portrait poster - thodi si height kam */
+    aspect-ratio: 1 / 1; /* square - height aur kam */
     background: var(--bg-surface);
     overflow: hidden;
     display: flex;
