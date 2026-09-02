@@ -1683,17 +1683,19 @@ table td {
     }
 
     .nav-user {
-        display: flex; /* Mobile par bhi avatar dikhe (logo ke side), buttons chhupe rahenge */
+        display: flex; /* Mobile par bhi avatar dikhe, buttons chhupe rahenge */
         align-items: center;
         gap: 0.5rem;
         margin-left: auto;
-        order: 1;
+        order: 1; /* Avatar hamburger se pehle */
     }
     .nav-user .btn {
         display: none; /* My Profile / Logout buttons sirf hamburger menu me */
     }
-    .nav-user ~ .nav-toggle,
-    .navbar .nav-toggle { margin-left: 0; }
+    .navbar .nav-toggle {
+        margin-left: 0;
+        order: 2; /* Hamburger sabse right (avatar ki purani jagah) */
+    }
 
     .nav-toggle { display: flex; }
     
