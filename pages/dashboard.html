@@ -124,10 +124,40 @@
                 <div class="profile-detail-row"><span><i class="fa-solid fa-user"></i> Full Name</span><strong>${profile.name || '—'}</strong></div>
                 <div class="profile-detail-row"><span><i class="fa-solid fa-envelope"></i> Email</span><strong>${profile.email || '—'}</strong></div>
                 <div class="profile-detail-row"><span><i class="fa-solid fa-mobile-screen"></i> Phone</span><strong>${profile.phone || '—'}</strong></div>
-                <div class="profile-detail-row"><span><i class="fa-solid fa-location-dot"></i> City</span><strong>${profile.city || '—'}</strong></div>
+                <div class="profile-detail-row"><span><i class="fa-solid fa-location-dot"></i> City</span><strong id="profile-city-value">${profile.city || 'Detecting...'}</strong></div>
             `;
             toggleProfileEdit(false);
             document.getElementById('profile-modal-overlay').classList.add('open');
+            detectUserCity(profile.city);
+        }
+
+        // ===== GPS LOCATION: City auto-detect =====
+        function detectUserCity(savedCity) {
+            const el = document.getElementById('profile-city-value');
+            if (!el) return;
+            const user = getLoggedInUser();
+            const cacheKey = `bms_user_city_${user?.id || 'guest'}`;
+            if (savedCity) { el.textContent = savedCity; return; }
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) { el.textContent = cached; return; }
+            if (!navigator.geolocation) { el.textContent = '—'; return; }
+            el.textContent = 'Detecting...';
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                try {
+                    const { latitude, longitude } = pos.coords;
+                    // Free reverse-geocode API — koi API key nahi chahiye
+                    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                    const data = await res.json();
+                    const city = data.city || data.locality || data.principalSubdivision || '—';
+                    el.textContent = city;
+                    localStorage.setItem(cacheKey, city);
+                } catch (e) {
+                    el.textContent = '—';
+                }
+            }, () => {
+                // User ne location permission deny ki
+                el.textContent = '—';
+            }, { timeout: 10000 });
         }
 
         function closeProfileModal() {
