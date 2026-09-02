@@ -1394,6 +1394,72 @@ table td {
     text-decoration: underline;
 }
 
+/* ===== SHARE MODAL & BUTTONS ===== */
+.share-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border: 1px solid var(--border-subtle);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: 0.85rem;
+}
+
+.share-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
+
+.share-count-tag {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-left: 0.35rem;
+}
+
+.share-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.share-option-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.share-option-item:hover {
+    transform: translateY(-3px);
+}
+
+.share-icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.share-option-item span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
 /* ===== ADVANCED MOBILE RESPONSIVE MEDIA QUERIES ===== */
 @media (max-width: 1024px) {
     .hero h1 { font-size: 2.4rem; }

@@ -127,7 +127,9 @@ const MovieAPI = {
     getById: (id) => apiGet(`/movies/${id}`),
     add: (data) => apiPostFallback(['/movies', '/movies/add'], data),
     update: (id, data) => apiPutFallback([`/movies/${id}`, `/movies/update/${id}`, `/movies/${id}/update`], data),
-    delete: (id) => apiDelete(`/movies/${id}`)
+    delete: (id) => apiDelete(`/movies/${id}`),
+    // Best-effort share count persistence; silently fails if the backend has no such endpoint
+    incrementShare: (id) => apiPost(`/movies/${id}/share`, {})
 };
 
 const TheaterAPI = {

@@ -150,6 +150,8 @@
         grid.innerHTML = movies
           .map((m, i) => {
             const poster = cards[i]?.poster || "";
+            const shareKey = registerShareMovie(m);
+            const shareBtn = `<span class="share-btn" title="Share" onclick="event.preventDefault(); event.stopPropagation(); openShareModal('${shareKey}')"><i class="fa-solid fa-share-nodes"></i> <span class="share-count-tag">${getShareCount(m.id)}</span></span>`;
             const movieAction = canBook
               ? '<span class="btn btn-sm btn-primary">Book Now</span>'
               : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='admin.html?editMovie=${m.id}'">Edit Movie</span>`;
@@ -169,6 +171,7 @@
                     </div>
                     <div class="card-footer">
                         <span class="duration"><i class="fa-regular fa-clock"></i> ${m.durationMinutes ? m.durationMinutes + " min" : "2h 15m"}</span>
+                        ${shareBtn}
                         ${movieAction}
                     </div>
                 </a>

@@ -352,6 +352,7 @@
                             </div>
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
                             ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
+                            <button class="btn btn-outline btn-lg" style="margin-top:0.5rem; margin-left:0.5rem;" onclick="openShareModal('${registerShareMovie(movie)}')"><i class="fa-solid fa-share-nodes"></i> Share <span class="share-count-tag">(${getShareCount(movie.id)})</span></button>
                         </div>
                     </div>
                 `;

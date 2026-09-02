@@ -345,6 +345,192 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// ===== SHARE FUNCTIONALITY =====
+let currentSharingMovie = null;
+let shareCountedInThisModal = false;
+
+// Registry so movie data can be passed to openShareModal safely (no quoting issues in inline HTML)
+const shareMovieRegistry = {};
+function registerShareMovie(movie) {
+    const key = `share-movie-${movie.id}`;
+    shareMovieRegistry[key] = movie;
+    return key;
+}
+
+// Build the real detail-page URL dynamically from the movie data and current origin
+function buildMovieUrl(movie) {
+    const inPages = window.location.pathname.includes('/pages/');
+    return `${window.location.origin}${inPages ? '' : '/pages'}/movie-detail.html?id=${encodeURIComponent(movie.id)}`;
+}
+
+function getShareCountText(movieId) {
+    return `${getShareCount(movieId)} shares`;
+}
+
+async function openShareModal(movieJsonOrKey) {
+    try {
+        let movie;
+        if (typeof movieJsonOrKey === 'string' && shareMovieRegistry[movieJsonOrKey]) {
+            movie = shareMovieRegistry[movieJsonOrKey];
+        } else {
+            movie = JSON.parse(decodeURIComponent(movieJsonOrKey));
+        }
+        currentSharingMovie = movie;
+        shareCountedInThisModal = false; // one count per modal open, prevents duplicates from a single click
+
+        const movieUrl = buildMovieUrl(movie);
+        const safeTitle = String(movie.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const modalHtml = `
+            <div style="text-align: center; padding: 0.5rem;">
+                <h3 style="font-family:'Outfit', sans-serif; margin-bottom: 0.5rem; color:#fff;">Share Movie</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">Spread the word about "${safeTitle}"</p>
+                <p class="share-count-tag" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-share-nodes"></i> ${getShareCountText(movie.id)}</p>
+
+                <div class="share-options-grid">
+                    <div class="share-option-item" onclick="shareToWhatsApp()">
+                        <div class="share-icon-circle" style="background: #25D366;">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </div>
+                        <span>WhatsApp</span>
+                    </div>
+                    <div class="share-option-item" onclick="copyMovieLink()">
+                        <div class="share-icon-circle" style="background: var(--bg-elevated); border: 1px solid var(--border-card);">
+                            <i class="fa-solid fa-link"></i>
+                        </div>
+                        <span>Copy Link</span>
+                    </div>
+                    ${navigator.share ? `
+                    <div class="share-option-item" onclick="nativeShare()">
+                        <div class="share-icon-circle" style="background: var(--primary);">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </div>
+                        <span>More</span>
+                    </div>` : ''}
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <input type="text" value="${movieUrl}" readonly style="width: 100%; background: transparent; border: none; color: var(--text-secondary); font-size: 0.8rem; text-align: center; outline: none;">
+                </div>
+            </div>
+        `;
+
+        let shareModal = document.getElementById('share-modal');
+        if (!shareModal) {
+            shareModal = document.createElement('div');
+            shareModal.id = 'share-modal';
+            shareModal.className = 'modal-overlay';
+            shareModal.innerHTML = `
+                <div class="modal" style="max-width: 400px;">
+                    <button class="modal-close" onclick="closeModal('share-modal')">&times;</button>
+                    <div id="share-modal-content"></div>
+                </div>
+            `;
+            document.body.appendChild(shareModal);
+        }
+
+        document.getElementById('share-modal-content').innerHTML = modalHtml;
+        openModal('share-modal');
+    } catch (e) {
+        console.error('Share error', e);
+        showToast('Could not open share options', 'error');
+    }
+}
+
+function countShareOnce() {
+    if (shareCountedInThisModal || !currentSharingMovie) return;
+    shareCountedInThisModal = true;
+    incrementShareCount(currentSharingMovie.id);
+    const tag = document.querySelector('#share-modal-content .share-count-tag');
+    if (tag) tag.innerHTML = `<i class="fa-solid fa-share-nodes"></i> ${getShareCountText(currentSharingMovie.id)}`;
+}
+
+function shareToWhatsApp() {
+    if (!currentSharingMovie) return;
+    const movie = currentSharingMovie;
+    const movieUrl = buildMovieUrl(movie);
+    // wa.me works on mobile (opens WhatsApp app with contact/group chooser) and on desktop (WhatsApp Web)
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(`🎬 Check out this movie: ${movie.title}\nBook your tickets here: ${movieUrl}`)}`;
+
+    window.open(waUrl, '_blank');
+    countShareOnce();
+    closeModal('share-modal');
+}
+
+function copyMovieLink() {
+    if (!currentSharingMovie) return;
+    const movie = currentSharingMovie;
+    const movieUrl = buildMovieUrl(movie);
+
+    const done = () => {
+        showToast('Link copied to clipboard!', 'success');
+        countShareOnce();
+        closeModal('share-modal');
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(movieUrl).then(done).catch(() => fallbackCopy(movieUrl, done));
+    } else {
+        fallbackCopy(movieUrl, done); // fallback for desktop / non-secure contexts
+    }
+}
+
+function fallbackCopy(text, done) {
+    const input = document.createElement('textarea');
+    input.value = text;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    try {
+        document.execCommand('copy');
+        done();
+    } catch {
+        showToast('Could not copy link', 'error');
+    }
+    document.body.removeChild(input);
+}
+
+async function nativeShare() {
+    if (!currentSharingMovie || !navigator.share) return;
+    const movie = currentSharingMovie;
+    const movieUrl = buildMovieUrl(movie);
+
+    try {
+        await navigator.share({
+            title: movie.title,
+            text: `🎬 Check out this movie: ${movie.title}`,
+            url: movieUrl
+        });
+        countShareOnce();
+        closeModal('share-modal');
+    } catch (e) {
+        console.log('Native share failed or cancelled');
+    }
+}
+
+function incrementShareCount(movieId) {
+    // Local persistence (used when backend share endpoint is unavailable)
+    const shares = JSON.parse(localStorage.getItem('bms_movie_shares') || '{}');
+    shares[movieId] = (shares[movieId] || 0) + 1;
+    localStorage.setItem('bms_movie_shares', JSON.stringify(shares));
+
+    // Best-effort backend persistence; silently ignored if the endpoint doesn't exist
+    if (typeof MovieAPI !== 'undefined' && MovieAPI.incrementShare) {
+        MovieAPI.incrementShare(movieId).catch(() => {});
+    }
+
+    // Refresh grids if visible
+    if (typeof renderMovies === 'function' && typeof visibleMovies !== 'undefined') {
+        renderMovies(visibleMovies);
+    }
+}
+
+function getShareCount(movieId) {
+    const shares = JSON.parse(localStorage.getItem('bms_movie_shares') || '{}');
+    return shares[movieId] || 0;
+}
+
 // ===== ON LOAD =====
 document.addEventListener('DOMContentLoaded', () => {
     updateNavUser();
