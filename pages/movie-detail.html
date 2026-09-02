@@ -353,7 +353,7 @@
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
                             <div class="detail-actions" style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem;">
                                 ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
-                                <span class="btn btn-outline btn-lg btn-like btn-like-detail ${isMovieLikedByUser(movie.id) ? 'liked' : ''}" data-movie-id="${movie.id}" onclick="toggleMovieLike(event, '${movie.id}')">${heartIconSVG()} <span class="like-count" style="font-size:1.1rem;">${getMovieLikeCount(movie)}</span></span>
+                                <span class="btn btn-outline btn-lg btn-like btn-like-detail ${isMovieLikedByUser(movie.id) ? 'liked' : ''}" data-movie-id="${movie.id}" onclick="toggleMovieLike(event, '${movie.id}')">${heartIconSVG()} <span class="like-count" style="font-size:1.1rem;">${likeCountLabel(getMovieLikeCount(movie))}</span></span>
                             </div>
                         </div>
                     </div>

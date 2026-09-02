@@ -534,6 +534,12 @@ function heartIconSVG() {
     return '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-120 352-234q-72-65-123.5-116t-85-96q-33.5-45-49-87T79-621q0-94 63-156.5T299-840q52 0 99 22t82 62q35-40 82-62t99-22q94 0 157 62.5T881-621q0 46-15.5 88t-49 87q-33.5 45-85 96T608-234L480-120ZM171-560h618q6-16 9-31t3-30q0-60-41.5-99.5T661-760q-47 0-86.5 27.5T504-660h-48q-31-45-70.5-72.5T299-760q-57 0-98.5 39.5T159-621q0 15 3 30t9 31Zm102 140h414q16-17 29-31.5t24-28.5H220q11 14 24 28.5t29 31.5Zm207 192q36-32 67.5-59.5T605-340H355q26 25 57.5 52.5T480-228Zm0-332Z"/></svg>';
 }
 
+// Like count label: 0 -> empty, 1 -> "1 Like", n -> "n Likes"
+function likeCountLabel(count) {
+    if (!count || count <= 0) return '';
+    return count === 1 ? '1 Like' : `${count} Likes`;
+}
+
 function getLikeStore() {
     try { return JSON.parse(localStorage.getItem(LIKE_STORE_KEY)) || {}; }
     catch { return {}; }
@@ -589,7 +595,7 @@ function toggleMovieLike(event, movieId) {
         const delta = getLikeStore()[id] || 0;
         let base = 0;
         if (window.__movieLikeBase) base = window.__movieLikeBase[id] || 0;
-        btn.innerHTML = `${heartIconSVG()} <span class="like-count">${base + delta}</span>`;
+        btn.innerHTML = `${heartIconSVG()} <span class="like-count">${likeCountLabel(base + delta)}</span>`;
         btn.classList.toggle('liked', !alreadyLiked);
     }
 }

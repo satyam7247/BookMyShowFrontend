@@ -166,7 +166,7 @@
               : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='pages/admin.html?editMovie=${m.id}'">Edit Movie</span>`;
             window.__movieLikeBase = window.__movieLikeBase || {};
             window.__movieLikeBase[String(m.id)] = getMovieLikeCount(m) - (getLikeStore()[String(m.id)] || 0);
-            const likeDisplay = `<span class="btn-like like-display ${isMovieLikedByUser(m.id) ? 'liked' : ''}" title="Like this movie on its detail page">${heartIconSVG()} <span class="like-count">${getMovieLikeCount(m)}</span></span>`;
+            const likeDisplay = `<span class="btn-like like-display ${isMovieLikedByUser(m.id) ? 'liked' : ''}" title="Like this movie on its detail page">${heartIconSVG()} <span class="like-count">${likeCountLabel(getMovieLikeCount(m))}</span></span>`;
                         return `
                 <a href="pages/movie-detail.html?id=${m.id}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
