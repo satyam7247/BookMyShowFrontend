@@ -161,7 +161,7 @@ button, input, select, textarea {
 }
 
 .grid-4 {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
 .grid-3 {
@@ -438,10 +438,11 @@ button, input, select, textarea {
     position: absolute;
     inset: 0;
     z-index: 1;
-    opacity: 0.62;
-    background-size: cover;
+    opacity: 0.75;
+    background-size: contain; /* puri photo dikhe - crop nahi hogi */
     background-position: center;
-    filter: blur(2px) brightness(0.82);
+    background-repeat: no-repeat;
+    filter: blur(1px) brightness(0.9);
     transform: none;
     transition: background-image 1s ease-in-out;
 }
@@ -1463,11 +1464,64 @@ table td {
     }
 }
 
-@media (max-width: 540px) {
-    .grid-4 {
-        grid-template-columns: 1fr;
+/* ===== LAPTOP/DESKTOP: Poster chhota + white frame (BookMyShow style) ===== */
+@media (min-width: 541px) {
+    .grid-4 .card-img {
+        background: #ffffff;
+        padding: 14px 14px 12px; /* poster charo taraf se chhota - white saja */
     }
-    
+    .grid-4 .card-img img {
+        object-fit: contain; /* poster poora dikhe, crop nahi hoga */
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .grid-4 .card-img.no-image {
+        background: #ffffff;
+    }
+}
+
+@media (max-width: 540px) {
+    /* FIX: Mobile par 2 movies per screen row */
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    /* 2-column layout ke liye card content compact karo */
+    .grid-4 .card {
+        min-width: 0;
+    }
+    .grid-4 .card-body {
+        padding: 0.6rem 0.65rem;
+    }
+    .grid-4 .card-body h3 {
+        font-size: 0.92rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .grid-4 .card-body p {
+        display: none; /* chhoti screen par description hide - sirf title/badges */
+    }
+    .grid-4 .card-body .badge-group {
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    .grid-4 .card-body .badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.35rem;
+    }
+    .grid-4 .card-footer {
+        padding: 0.5rem 0.65rem;
+        font-size: 0.75rem;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+    .grid-4 .card-footer .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.68rem;
+    }
+
     .hero h1 { font-size: 1.8rem; }
     .search-bar { flex-direction: column; border-radius: var(--radius-md); padding: 0.75rem; gap: 0.75rem; }
     .search-bar input { width: 100%; padding: 0.5rem 0; }
@@ -1479,7 +1533,12 @@ table td {
 }
 
 @media (max-width: 360px) {
+    /* FIX: Chhoti screen par bhi 2 columns maintain karo */
     .grid-4 {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.55rem;
+    }
+    .grid-4 .card-body h3 {
+        font-size: 0.82rem;
     }
 }

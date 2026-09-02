@@ -112,7 +112,95 @@
                             <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('combo', 1)">+</button>
                         </div>
                     </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-burger" style="color:#e67e22;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Veg Burger</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹130</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('burger', -1)">-</button>
+                            <span id="qty-burger" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('burger', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-hotdog" style="color:#c0392b;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Hot Dog</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹140</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('hotdog', -1)">-</button>
+                            <span id="qty-hotdog" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('hotdog', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-cookie-bite" style="color:#d35400;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Samosa (2 pc)</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹60</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('samosa', -1)">-</button>
+                            <span id="qty-samosa" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('samosa', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-bowl-food" style="color:#f39c12;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">French Fries</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹110</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('fries', -1)">-</button>
+                            <span id="qty-fries" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('fries', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-mug-hot" style="color:#7f5a3c;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Coffee</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹80</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('coffee', -1)">-</button>
+                            <span id="qty-coffee" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('coffee', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-ice-cream" style="color:#fd79a8;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Ice Cream</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹90</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('icecream', -1)">-</button>
+                            <span id="qty-icecream" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('icecream', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="food-card" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.75rem; text-align:center;">
+                        <div style="font-size:1.6rem; margin-bottom:0.2rem;"><i class="fa-solid fa-bottle-water" style="color:#0984e3;"></i></div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff;">Water Bottle</div>
+                        <div style="font-size:0.8rem; color:var(--accent); font-weight:800; margin-bottom:0.35rem;">₹40</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('water', -1)">-</button>
+                            <span id="qty-water" style="font-weight:700; font-size:0.88rem;">0</span>
+                            <button class="btn btn-sm btn-outline" style="padding:0.1rem 0.45rem;" onclick="updateFoodQty('water', 1)">+</button>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- FOOD DELIVERY TIME (movie ke andar delivery slot) -->
+                <div style="margin-top:0.9rem; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.65rem 0.85rem;">
+                    <label for="food-delivery-time" style="font-size:0.82rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                        <i class="fa-solid fa-bell-concierge" style="color:var(--accent);"></i> Food Delivery Time:
+                    </label>
+                    <select id="food-delivery-time" onchange="updateSummary()" style="flex:1; min-width:150px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:0.45rem 0.6rem; font-size:0.85rem; cursor:pointer;">
+                        <option value="">Select delivery time (inside movie duration)</option>
+                    </select>
+                </div>
+                <p style="font-size:0.72rem; color:var(--text-muted); margin-top:0.4rem;">🍽️ Snacks seat par deliver honge — movie ke time ke andar ka slot chuno.</p>
             </div>
 
             <!-- Booking Summary -->
@@ -122,8 +210,8 @@
             </div>
 
             <!-- Terms & Conditions Checkbox -->
-            <div class="terms-checkbox-container">
-                <input type="checkbox" id="agree-terms" onchange="updateSummary()" checked />
+            <div class="terms-checkbox-container" id="terms-container">
+                <input type="checkbox" id="agree-terms" onchange="onTermsChange()" checked />
                 <label for="agree-terms">I agree to cinema auditorium terms & booking rules</label>
             </div>
 
@@ -149,9 +237,79 @@
             popcorn: { name: 'Popcorn', price: 180 },
             drink: { name: 'Cold Drink', price: 120 },
             nachos: { name: 'Cheese Nachos', price: 160 },
-            combo: { name: 'Movie Combo', price: 250 }
+            combo: { name: 'Movie Combo', price: 250 },
+            burger: { name: 'Veg Burger', price: 130 },
+            hotdog: { name: 'Hot Dog', price: 140 },
+            samosa: { name: 'Samosa (2 pc)', price: 60 },
+            fries: { name: 'French Fries', price: 110 },
+            coffee: { name: 'Coffee', price: 80 },
+            icecream: { name: 'Ice Cream', price: 90 },
+            water: { name: 'Water Bottle', price: 40 }
         };
-        const foodQuantities = { popcorn: 0, drink: 0, nachos: 0, combo: 0 };
+        const foodQuantities = { popcorn: 0, drink: 0, nachos: 0, combo: 0, burger: 0, hotdog: 0, samosa: 0, fries: 0, coffee: 0, icecream: 0, water: 0 };
+
+        // ===== FOOD DELIVERY SLOTS (movie ke time ke andar) =====
+        function timeToMinutes(t) {
+            if (!t) return null;
+            const parts = String(t).split(':');
+            const h = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+            if (isNaN(h) || isNaN(m)) return null;
+            return h * 60 + m;
+        }
+
+        function minutesToLabel(mins) {
+            const h24 = Math.floor(mins / 60) % 24;
+            const m = mins % 60;
+            const ampm = h24 >= 12 ? 'PM' : 'AM';
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+        }
+
+        function populateDeliverySlots(show) {
+            const sel = document.getElementById('food-delivery-time');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Select delivery time (inside movie duration)</option>';
+
+            const startMin = timeToMinutes(show?.startTime);
+            const endMin = timeToMinutes(show?.endTime);
+            const duration = (show?.movie?.durationMinutes || 180);
+            // Delivery window: show start -> show end (ya start + duration, jo bhi chhota ho)
+            let windowEnd = endMin != null ? endMin : (startMin != null ? startMin + duration : null);
+            if (startMin == null || windowEnd == null || windowEnd <= startMin) {
+                windowEnd = startMin != null ? startMin + duration : null;
+            }
+            if (startMin == null || windowEnd == null) {
+                // Fallback: agar time parse na ho paye toh default slots
+                ['Show Start', 'Interval', 'Climax se pehle'].forEach(label => {
+                    const opt = document.createElement('option');
+                    opt.value = label;
+                    opt.textContent = label;
+                    sel.appendChild(opt);
+                });
+                return;
+            }
+
+            // Show start pe + har 15 min ka slot, movie ke andar hi tak
+            const slotOption = (value, label) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                sel.appendChild(opt);
+            };
+
+            slotOption(`${minutesToLabel(startMin)}`, `${minutesToLabel(startMin)} — Show start par`);
+            for (let t = startMin + 15; t < windowEnd; t += 15) {
+                slotOption(`${minutesToLabel(t)}`, minutesToLabel(t));
+            }
+            // Last option: interval highlight (approx middle)
+            const intervalMin = startMin + Math.floor((windowEnd - startMin) / 2 / 15) * 15;
+            slotOption(`${minutesToLabel(intervalMin)} (interval)`, `${minutesToLabel(intervalMin)} — Interval ke around`);
+        }
+
+        function getSelectedDeliveryTime() {
+            const sel = document.getElementById('food-delivery-time');
+            return sel?.value || '';
+        }
 
         function updateFoodQty(itemKey, change) {
             const current = foodQuantities[itemKey] || 0;
@@ -268,7 +426,12 @@
                 if (el) el.textContent = 0;
             });
 
+            // Naya show select karne par terms checkbox reset
+            const agreeBox = document.getElementById('agree-terms');
+            if (agreeBox) agreeBox.checked = true;
+
             document.getElementById('seat-modal-title').textContent = `${show.screen?.name || 'Audi'} — ${show.showDate} (${show.startTime})`;
+            populateDeliverySlots(show);
             openModal('seat-modal');
             showLoading('seat-map');
 
@@ -403,11 +566,29 @@
             const seatsTotal = selectedSeatIds.length * pricePerSeat;
             const grandTotal = seatsTotal + foodTotal;
 
+            // Agar food select kiya hai toh delivery time movie ke andar ka lena zaroori hai
+            const deliveryTime = getSelectedDeliveryTime();
+            const deliveryMissing = selectedFood.length > 0 && !deliveryTime;
+
             contentDiv.innerHTML = `
                 <div style="display:flex; justify-content:space-between;"><span>Seats (${selectedSeatIds.length}):</span><strong>₹${seatsTotal} (${selectedSeatIds.join(', ')})</strong></div>
                 ${selectedFood.length ? `<div style="display:flex; justify-content:space-between; color:var(--accent);"><span>Snacks & Drinks:</span><strong>₹${foodTotal} (${selectedFood.join(', ')})</strong></div>` : ''}
+                ${selectedFood.length && deliveryTime ? `<div style="display:flex; justify-content:space-between; color:var(--accent);"><span><i class="fa-solid fa-bell-concierge"></i> Food Delivery:</span><strong>${deliveryTime}</strong></div>` : ''}
+                ${deliveryMissing ? `<div style="color:#f84464; font-size:0.8rem;"><i class="fa-solid fa-circle-exclamation"></i> Please select food delivery time (movie ke andar)</div>` : ''}
                 <div style="display:flex; justify-content:space-between; font-size:1.1rem; color:#fff; border-top:1px solid var(--border-subtle); padding-top:0.4rem; margin-top:0.3rem;"><span>Total Payable Amount:</span><strong style="color:var(--primary);">₹${grandTotal}</strong></div>
             `;
+
+            confirmBtn.disabled = !agreeTerms?.checked || deliveryMissing;
+        }
+
+        // Terms checkbox — har click pe button state turant update ho
+        function onTermsChange() {
+            const agreeTerms = document.getElementById('agree-terms');
+            if (!agreeTerms) return;
+            updateSummary();
+            if (!agreeTerms.checked && selectedSeatIds.length > 0) {
+                showToast('Terms accept karo toh payment button enable hoga', 'info');
+            }
         }
 
         // Open Razorpay Popup
@@ -497,6 +678,7 @@
                     startTime: currentShow?.startTime,
                     seats: selectedSeatIds.join(', '),
                     food: foodList.join(', ') || 'No Snacks',
+                    deliveryTime: getSelectedDeliveryTime() || 'Not selected',
                     totalPrice: grandTotal,
                     paymentId: paymentId,
                     status: 'CONFIRMED',
@@ -540,6 +722,17 @@
             showToast('Opening Razorpay Payment Gateway...', 'info');
             openRazorpayCheckout(grandTotal, user);
         }
+
+        // ===== TERMS CHECKBOX: poori row clickable =====
+        document.getElementById('terms-container')?.addEventListener('click', (e) => {
+            // Input/label ke apne click se double-toggle nahi hona chahiye
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
+            const box = document.getElementById('agree-terms');
+            if (box) {
+                box.checked = !box.checked;
+                onTermsChange();
+            }
+        });
 
         loadMovie();
     </script>
