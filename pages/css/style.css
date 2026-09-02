@@ -588,10 +588,26 @@ button, input, select, textarea {
 .btn-like.liked svg path {
     fill: #e91e63;
 }
-/* Detail page like button — bada icon + count */
+.btn-like {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0 0.15rem;
+    gap: 0.3rem;
+}
+/* Detail page like button — icon + count, no button border */
+.btn-like-detail {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
 .btn-like-detail svg {
-    height: 30px;
-    width: 30px;
+    height: 26px;
+    width: 26px;
 }
 @keyframes like-pop {
     0% { transform: scale(1); }

@@ -155,7 +155,6 @@
               : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='admin.html?editMovie=${m.id}'">Edit Movie</span>`;
             window.__movieLikeBase = window.__movieLikeBase || {};
             window.__movieLikeBase[String(m.id)] = getMovieLikeCount(m) - (getLikeStore()[String(m.id)] || 0);
-            const likeBtn = `<span class="btn btn-sm btn-outline btn-like ${isMovieLikedByUser(m.id) ? 'liked' : ''}" data-movie-id="${m.id}" onclick="toggleMovieLike(event, '${m.id}')">${heartIconSVG()} <span class="like-count">${getMovieLikeCount(m)}</span></span>`;
                         return `
                 <a href="movie-detail.html?id=${m.id}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
@@ -165,7 +164,6 @@
                         <h3>${m.title}</h3>
                     </div>
                     <div class="card-footer">
-                        ${likeBtn}
                         ${movieAction}
                     </div>
                 </a>
