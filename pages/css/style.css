@@ -404,9 +404,16 @@ button, input, select, textarea {
 
 .city-bar-label {
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.city-bar-label .material-icons {
+    font-size: 0.95rem;
 }
 
 .city-chip {
