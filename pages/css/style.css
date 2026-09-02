@@ -168,7 +168,7 @@ button, input, select, textarea {
 
 @media (min-width: 900px) {
     .grid-4 {
-        grid-template-columns: repeat(4, 1fr); /* exactly 4 per row - cards bade dikhe */
+        grid-template-columns: repeat(5, 1fr); /* exactly 5 per row, locked from 900px up */
     }
 }
 
