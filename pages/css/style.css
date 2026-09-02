@@ -610,7 +610,7 @@ button, input, select, textarea {
 .icon-lock-alt::before { content: '▪'; }
 
 .card-body {
-    padding: 1rem 1.1rem 0.8rem;
+    padding: 1.35rem 1.1rem 0.8rem; /* text ko thoda niche khincha */
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -718,6 +718,7 @@ button, input, select, textarea {
 }
 
 .card-footer {
+    margin-top: auto; /* buttons hamesha card ke niche chipke rahe */
     padding: 0.7rem 1.1rem 0.85rem;
     display: flex;
     align-items: center;
