@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard - BookMyShow</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -25,6 +26,12 @@
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">My Account & Dashboard</h2>
+            <div class="profile-menu-wrap">
+                <button class="profile-dots-btn" onclick="toggleProfileMenu(event)" aria-label="Account options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <div class="profile-dropdown" id="profile-dropdown">
+                    <button onclick="openProfileModal()"><i class="fa-regular fa-user"></i> My Profile</button>
+                </div>
+            </div>
         </div>
 
         <!-- PROFILE CARD -->
@@ -48,9 +55,177 @@
         </section>
     </div>
 
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal-overlay" id="profile-modal-overlay" onclick="if(event.target===this) closeProfileModal()">
+        <div class="profile-modal">
+            <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="profile-modal-header">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar" id="profile-avatar"></div>
+                    <button class="profile-avatar-edit" onclick="document.getElementById('profile-photo-input').click()" title="Change photo"><i class="fa-solid fa-camera"></i></button>
+                    <input type="file" id="profile-photo-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+                </div>
+                <h3 id="profile-modal-name" style="margin:0.75rem 0 0.25rem; font-family:'Outfit',sans-serif; color:#fff;"></h3>
+                <span class="badge" style="background:var(--primary-subtle); color:var(--primary);"><i class="fa-solid fa-clapperboard"></i> Movie Lover</span>
+            </div>
+            <div class="profile-modal-body" id="profile-view-body"></div>
+            <div class="profile-modal-body" id="profile-edit-body" style="display:none;"></div>
+            <div class="profile-modal-actions">
+                <button class="btn btn-outline" id="profile-edit-btn" onclick="toggleProfileEdit(true)"><i class="fa-solid fa-pen"></i> Edit Profile</button>
+                <button class="btn btn-primary" id="profile-save-btn" style="display:none;" onclick="saveProfileChanges()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/api.js"></script>
     <script src="../js/utils.js"></script>
     <script>
+        // ===== PROFILE MENU & MODAL =====
+        function getProfileOverrides() {
+            try {
+                const user = getLoggedInUser();
+                return JSON.parse(localStorage.getItem(`bms_profile_${user.id}`) || '{}');
+            } catch (e) { return {}; }
+        }
+
+        function getProfilePhoto() {
+            try {
+                const user = getLoggedInUser();
+                return localStorage.getItem(`bms_profile_photo_${user.id}`) || '';
+            } catch (e) { return ''; }
+        }
+
+        function mergedProfile() {
+            const user = getLoggedInUser();
+            const o = getProfileOverrides();
+            return { ...user, ...o };
+        }
+
+        function renderAvatar(el, profile) {
+            const photo = getProfilePhoto();
+            if (photo) {
+                el.innerHTML = `<img src="${photo}" alt="Profile photo" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
+            } else {
+                el.innerHTML = `<span style="font-weight:800;">${(profile.name || 'U').charAt(0).toUpperCase()}</span>`;
+            }
+        }
+
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            document.getElementById('profile-dropdown').classList.toggle('open');
+        }
+        document.addEventListener('click', () => document.getElementById('profile-dropdown')?.classList.remove('open'));
+
+        function openProfileModal() {
+            document.getElementById('profile-dropdown').classList.remove('open');
+            const profile = mergedProfile();
+            renderAvatar(document.getElementById('profile-avatar'), profile);
+            document.getElementById('profile-modal-name').textContent = profile.name || 'Movie Lover';
+            document.getElementById('profile-view-body').innerHTML = `
+                <div class="profile-detail-row"><span><i class="fa-solid fa-user"></i> Full Name</span><strong>${profile.name || '—'}</strong></div>
+                <div class="profile-detail-row"><span><i class="fa-solid fa-envelope"></i> Email</span><strong>${profile.email || '—'}</strong></div>
+                <div class="profile-detail-row"><span><i class="fa-solid fa-mobile-screen"></i> Phone</span><strong>${profile.phone || '—'}</strong></div>
+                <div class="profile-detail-row"><span><i class="fa-solid fa-location-dot"></i> City</span><strong>${profile.city || '—'}</strong></div>
+            `;
+            toggleProfileEdit(false);
+            document.getElementById('profile-modal-overlay').classList.add('open');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal-overlay').classList.remove('open');
+        }
+
+        function toggleProfileEdit(editMode) {
+            const profile = mergedProfile();
+            document.getElementById('profile-view-body').style.display = editMode ? 'none' : 'block';
+            document.getElementById('profile-edit-body').style.display = editMode ? 'block' : 'none';
+            document.getElementById('profile-edit-btn').style.display = editMode ? 'none' : 'inline-flex';
+            document.getElementById('profile-save-btn').style.display = editMode ? 'inline-flex' : 'none';
+            if (editMode) {
+                document.getElementById('profile-edit-body').innerHTML = `
+                    <label class="profile-edit-label">Full Name</label>
+                    <input type="text" class="form-input" id="edit-name" value="${(profile.name || '').replace(/"/g, '&quot;')}" />
+                    <label class="profile-edit-label">Email</label>
+                    <input type="email" class="form-input" id="edit-email" value="${profile.email || ''}" />
+                    <label class="profile-edit-label">Phone</label>
+                    <input type="tel" class="form-input" id="edit-phone" value="${profile.phone || ''}" />
+                    <label class="profile-edit-label">City</label>
+                    <input type="text" class="form-input" id="edit-city" value="${profile.city || ''}" />
+                `;
+            }
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
+            if (file.size > 3 * 1024 * 1024) { showToast('Image too large (max 3MB)', 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const user = getLoggedInUser();
+                    localStorage.setItem(`bms_profile_photo_${user.id}`, reader.result);
+                    renderAvatar(document.getElementById('profile-avatar'), mergedProfile());
+                    const welcomeAvatar = document.getElementById('welcome-avatar');
+                    if (welcomeAvatar) renderAvatar(welcomeAvatar, mergedProfile());
+                    showToast('Profile photo updated', 'success');
+                } catch (e) {
+                    showToast('Could not save photo (storage full)', 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveProfileChanges() {
+            const updated = {
+                name: document.getElementById('edit-name').value.trim(),
+                email: document.getElementById('edit-email').value.trim(),
+                phone: document.getElementById('edit-phone').value.trim(),
+                city: document.getElementById('edit-city').value.trim()
+            };
+            if (!updated.name || !updated.email) { showToast('Name and Email are required', 'error'); return; }
+            try {
+                const user = getLoggedInUser();
+                try { await UserAPI.update(user.id, { ...user, ...updated }); } catch (e) { /* best-effort */ }
+                const o = getProfileOverrides();
+                localStorage.setItem(`bms_profile_${user.id}`, JSON.stringify({ ...o, ...updated }));
+                try {
+                    const session = JSON.parse(localStorage.getItem('bms_user') || 'null');
+                    if (session && String(session.id) === String(user.id)) {
+                        localStorage.setItem('bms_user', JSON.stringify({ ...session, ...updated }));
+                    }
+                } catch (e) {}
+                showToast('Profile updated successfully', 'success');
+                openProfileModal();
+                window.renderWelcomeCard && window.renderWelcomeCard();
+            } catch (e) {
+                showToast(e.message || 'Could not save profile', 'error');
+            }
+        }
+
+        // ===== WELCOME CARD (with profile photo) =====
+        window.renderWelcomeCard = function() {
+            const user = mergedProfile();
+            const el = document.getElementById('user-info');
+            if (!el) return;
+            el.innerHTML = `
+                <div class="form-card" style="padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; border:1px solid var(--border-card);">
+                    <div style="display:flex; align-items:center; gap:1.25rem;">
+                        <div id="welcome-avatar" style="width:60px; height:60px; border-radius:var(--radius-full); background:var(--primary-subtle); color:var(--primary); font-size:2rem; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px solid var(--primary-glow); flex-shrink:0;"></div>
+                        <div>
+                            <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${user.name || 'Movie Lover'} <i class="fa-solid fa-hand" style="color:var(--accent);"></i></h3>
+                            <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;"><i class="fa-solid fa-envelope"></i> ${user.email || ''} &nbsp;|&nbsp; <i class="fa-solid fa-mobile-screen"></i> ${user.phone || 'Standard User Account'}</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <button class="btn btn-outline btn-lg" onclick="openProfileModal()"><i class="fa-regular fa-user"></i> My Profile</button>
+                        <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
+                    </div>
+                </div>
+            `;
+            renderAvatar(document.getElementById('welcome-avatar'), user);
+        };
+
         async function cancelBooking(id) {
             if (!confirm('Are you sure you want to cancel this ticket booking?')) return;
             try {
@@ -80,22 +255,7 @@
                 return;
             }
 
-            document.getElementById('user-info').innerHTML = `
-                <div class="form-card" style="padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; border:1px solid var(--border-card);">
-                    <div style="display:flex; align-items:center; gap:1.25rem;">
-                        <div style="width:60px; height:60px; border-radius:var(--radius-full); background:var(--primary-subtle); color:var(--primary); font-size:2rem; display:flex; align-items:center; justify-content:center; font-weight:800; border:2px solid var(--primary-glow);">
-                            ${(user.name || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${user.name || 'Movie Lover'} <i class="fa-solid fa-hand" style="color:var(--accent);"></i></h3>
-                            <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;"><i class="fa-solid fa-envelope"></i> ${user.email} &nbsp;|&nbsp; <i class="fa-solid fa-mobile-screen"></i> ${user.phone || 'Standard User Account'}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
-                    </div>
-                </div>
-            `;
+            renderWelcomeCard();
 
             // Load bookings
             const bookingsEl = document.getElementById('dashboard-bookings');

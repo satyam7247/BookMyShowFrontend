@@ -667,6 +667,144 @@ button, input, select, textarea {
 .icon-clock-alt::before { content: '◯'; }
 .icon-lock-alt::before { content: '▪'; }
 
+/* ===== PROFILE MENU (3 DOTS) & PROFILE MODAL ===== */
+.profile-menu-wrap { position: relative; }
+
+.profile-dots-btn {
+    width: 42px; height: 42px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-card);
+    background: var(--bg-card, rgba(255,255,255,0.05));
+    color: var(--text-main, #fff);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.profile-dots-btn:hover { background: var(--primary-subtle, rgba(248,68,100,0.15)); border-color: var(--primary); }
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 190px;
+    background: var(--bg-card, #14141f);
+    border: 1px solid var(--border-card, rgba(255,255,255,0.1));
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    padding: 0.4rem;
+    display: none;
+    z-index: 500;
+}
+.profile-dropdown.open { display: block; }
+.profile-dropdown button {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-main, #fff);
+    font-size: 0.95rem;
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 0.6rem;
+}
+.profile-dropdown button:hover { background: var(--primary-subtle, rgba(248,68,100,0.15)); color: var(--primary, #f84464); }
+
+.profile-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+.profile-modal-overlay.open { display: flex; }
+
+.profile-modal {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--bg-card, #14141f);
+    border: 1px solid var(--border-card, rgba(255,255,255,0.1));
+    border-radius: 18px;
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+}
+.profile-modal-close {
+    position: absolute; top: 0.9rem; right: 0.9rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-main, #fff);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.profile-modal-close:hover { background: var(--primary-subtle, rgba(248,68,100,0.2)); }
+
+.profile-avatar-wrap {
+    position: relative;
+    width: 110px; height: 110px;
+    margin: 0 auto;
+}
+.profile-avatar {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: var(--primary-subtle, rgba(248,68,100,0.15));
+    color: var(--primary, #f84464);
+    font-size: 2.6rem;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid var(--primary-glow, rgba(248,68,100,0.5));
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+}
+.profile-avatar-edit {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-card, #14141f);
+    background: var(--primary, #f84464);
+    color: #fff;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.profile-avatar-edit:hover { filter: brightness(1.15); }
+
+.profile-modal-body { text-align: left; margin-top: 1.4rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.profile-detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-card, rgba(255,255,255,0.08));
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+}
+.profile-detail-row span { color: var(--text-secondary, #9aa0b0); font-size: 0.88rem; display: flex; align-items: center; gap: 0.5rem; }
+.profile-detail-row strong { color: var(--text-main, #fff); font-size: 0.92rem; word-break: break-word; text-align: right; }
+
+.profile-edit-label {
+    display: block;
+    color: var(--text-secondary, #9aa0b0);
+    font-size: 0.82rem;
+    margin: 0.5rem 0 0.3rem;
+}
+.profile-edit-label:first-child { margin-top: 0; }
+.profile-modal-body .form-input { width: 100%; box-sizing: border-box; }
+
+.profile-modal-actions {
+    display: flex; gap: 0.75rem; justify-content: center;
+    margin-top: 1.5rem;
+}
+.profile-modal-actions .btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+
 .card-body {
     padding: 0.35rem 0.85rem 0.3rem; /* naam wali dark patti patli, naam left me */
     display: flex;

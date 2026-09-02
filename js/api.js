@@ -176,5 +176,6 @@ const UserAPI = {
     getAll: () => apiGet('/users'),
     login: (data) => apiPost('/users/login', data),
     register: (data) => apiPost('/users/register', data),
-    getById: (id) => apiGet(`/users/${id}`)
+    getById: (id) => apiGet(`/users/${id}`),
+    update: (id, data) => apiPutFallback([`/users/${id}`, `/users/update/${id}`, `/users/${id}/update`], data)
 };
