@@ -668,7 +668,7 @@ button, input, select, textarea {
 .icon-lock-alt::before { content: '▪'; }
 
 .card-body {
-    padding: 1.35rem 1.1rem 0.8rem; /* text ko thoda niche khincha */
+    padding: 0.35rem 0.85rem 0.3rem; /* naam wali dark patti patli, naam left me */
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -679,8 +679,9 @@ button, input, select, textarea {
     font-size: 1.08rem;
     font-weight: 700;
     color: var(--text-main);
-    margin-bottom: 0.35rem;
-    line-height: 1.3;
+    margin-bottom: 0;
+    line-height: 1.25;
+    text-align: left;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
