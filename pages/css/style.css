@@ -450,7 +450,7 @@ button, input, select, textarea {
        lekin letterbox/khaali jagah nahi dikhegi (reference screenshot jaisa look) */
     background-image: var(--hero-img, none);
     background-size: cover;
-    background-position: center;
+    background-position: center 75%; /* photo ka niche wala hissa zyada dikhe */
     background-repeat: no-repeat;
     transition: background-image 1s ease-in-out;
 }
