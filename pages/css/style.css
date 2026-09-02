@@ -563,7 +563,7 @@ button, input, select, textarea {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center 70%; /* image ka focus thoda niche - niche wala hissa zyada dikhe */
+    object-position: center 80%; /* image ka focus niche - bottom ka hissa zyada dikhe */
     display: block;
     transition: transform 0.5s var(--ease-smooth);
 }

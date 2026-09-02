@@ -68,6 +68,7 @@
         "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=1600&q=80"
       ];
 
+
       async function loadCities() {
         try {
           const cities = await CityAPI.getAll();
@@ -166,7 +167,7 @@
                         return `
                 <a href="pages/movie-detail.html?id=${m.id}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
-                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<i class=\"fa-solid fa-clapperboard\"></i>'; " />` : '<i class="fa-solid fa-clapperboard"></i>'}
+                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<i class=&quot;fa-solid fa-clapperboard&quot;></i>';" />` : '<i class="fa-solid fa-clapperboard"></i>'}
                     </div>
                     <div class="card-body">
                         <h3>${m.title}</h3>
