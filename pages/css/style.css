@@ -162,13 +162,13 @@ button, input, select, textarea {
 
 .grid-4 {
     /* Ek row mein 5 movies (laptop/desktop pe) */
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.1rem;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 900px) {
     .grid-4 {
-        grid-template-columns: repeat(5, 1fr); /* exactly 5 per row */
+        grid-template-columns: repeat(5, 1fr); /* exactly 5 per row, locked from 900px up */
     }
 }
 
@@ -446,24 +446,13 @@ button, input, select, textarea {
     position: absolute;
     inset: 0;
     z-index: 1;
-    /* Poori photo - contain (crop nahi hogi) */
-    background-image: var(--hero-img, none);
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: background-image 1s ease-in-out;
-}
-
-/* Side gaps mein wahi photo blurred fill - Netflix style */
-.hero-slideshow::before {
-    content: '';
-    position: absolute;
-    inset: -40px;
+    /* Photo jaisa full-bleed: pura hero area fill hoga, image thodi crop ho sakti hai
+       lekin letterbox/khaali jagah nahi dikhegi (reference screenshot jaisa look) */
     background-image: var(--hero-img, none);
     background-size: cover;
     background-position: center;
-    filter: blur(22px) brightness(0.45);
-    z-index: -1;
+    background-repeat: no-repeat;
+    transition: background-image 1s ease-in-out;
 }
 
 .hero::after {
