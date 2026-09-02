@@ -55,6 +55,7 @@
         <div class="profile-modal">
             <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             <div class="profile-modal-header">
+                <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
                 <div class="profile-avatar-wrap">
                     <div class="profile-avatar" id="profile-avatar"></div>
                     <button class="profile-avatar-edit" onclick="document.getElementById('profile-photo-input').click()" title="Change photo"><i class="fa-solid fa-camera"></i></button>
@@ -62,12 +63,12 @@
                 </div>
                 <h3 id="profile-modal-name" style="margin:0.75rem 0 0.25rem; font-family:'Outfit',sans-serif; color:#fff;"></h3>
                 <span class="badge" style="background:var(--primary-subtle); color:var(--primary);"><i class="fa-solid fa-clapperboard"></i> Movie Lover</span>
+                <button class="btn btn-primary" id="profile-edit-btn" onclick="toggleProfileEdit(true)" style="margin-top:0.9rem; width:100%;"><i class="fa-solid fa-pen"></i> Edit Profile</button>
             </div>
             <div class="profile-modal-body" id="profile-view-body"></div>
             <div class="profile-modal-body" id="profile-edit-body" style="display:none;"></div>
-            <div class="profile-modal-actions">
-                <button class="btn btn-outline" id="profile-edit-btn" onclick="toggleProfileEdit(true)"><i class="fa-solid fa-pen"></i> Edit Profile</button>
-                <button class="btn btn-primary" id="profile-save-btn" style="display:none;" onclick="saveProfileChanges()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            <div class="profile-modal-actions" id="profile-save-wrap" style="display:none;">
+                <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfileChanges()" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
             </div>
         </div>
     </div>
@@ -139,7 +140,7 @@
             document.getElementById('profile-view-body').style.display = editMode ? 'none' : 'block';
             document.getElementById('profile-edit-body').style.display = editMode ? 'block' : 'none';
             document.getElementById('profile-edit-btn').style.display = editMode ? 'none' : 'inline-flex';
-            document.getElementById('profile-save-btn').style.display = editMode ? 'inline-flex' : 'none';
+            document.getElementById('profile-save-wrap').style.display = editMode ? 'flex' : 'none';
             if (editMode) {
                 document.getElementById('profile-edit-body').innerHTML = `
                     <label class="profile-edit-label">Full Name</label>
