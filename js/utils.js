@@ -384,8 +384,7 @@ async function openShareModal(movieJsonOrKey) {
         const modalHtml = `
             <div style="text-align: center; padding: 0.5rem;">
                 <h3 style="font-family:'Outfit', sans-serif; margin-bottom: 0.5rem; color:#fff;">Share Movie</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">Spread the word about "${safeTitle}"</p>
-                <p class="share-count-tag" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-share-nodes"></i> ${getShareCountText(movie.id)}</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Spread the word about "${safeTitle}"</p>
 
                 <div class="share-options-grid">
                     <div class="share-option-item" onclick="shareToWhatsApp()">
