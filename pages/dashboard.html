@@ -137,8 +137,7 @@
             if (!el) return;
             const user = getLoggedInUser();
             const cacheKey = `bms_user_city_${user?.id || 'guest'}`;
-            if (savedCity) { el.textContent = savedCity; return; }
-            // Pehle cached city dikha do (turant), phir fresh GPS se update karo
+            // City sirf GPS se aati hai (fixed) — profile.city se override nahi hoti
             const cached = localStorage.getItem(cacheKey);
             if (cached) el.textContent = cached;
             if (!navigator.geolocation) { if (!cached) el.textContent = '—'; return; }
@@ -182,8 +181,7 @@
                     <input type="email" class="form-input" id="edit-email" value="${profile.email || ''}" />
                     <label class="profile-edit-label">Phone</label>
                     <input type="tel" class="form-input" id="edit-phone" value="${profile.phone || ''}" />
-                    <label class="profile-edit-label">City</label>
-                    <input type="text" class="form-input" id="edit-city" value="${profile.city || ''}" />
+                    <p style="color:var(--text-secondary); font-size:0.8rem; margin:0.75rem 0 0;">📍 Location GPS se auto-detect hoti hai — manually edit nahi ho sakti.</p>
                 `;
             }
         }
@@ -213,11 +211,13 @@
             const updated = {
                 name: document.getElementById('edit-name').value.trim(),
                 email: document.getElementById('edit-email').value.trim(),
-                phone: document.getElementById('edit-phone').value.trim(),
-                city: document.getElementById('edit-city').value.trim()
+                phone: document.getElementById('edit-phone').value.trim()
             };
-            if (!updated.name || !updated.email) { showToast('Name and Email are required', 'error'); return; }
+            // City GPS se fix hai — edit me override nahi hoti
             const user = getLoggedInUser();
+            const savedCity = localStorage.getItem(`bms_user_city_${user?.id || 'guest'}`) || user?.city || '';
+            if (savedCity) updated.city = savedCity;
+            if (!updated.name || !updated.email) { showToast('Name and Email are required', 'error'); return; }
             // Pehle backend me save karo (sab devices par sync ke liye)
             try {
                 const saved = await UserAPI.update(user.id, { ...user, ...updated });
