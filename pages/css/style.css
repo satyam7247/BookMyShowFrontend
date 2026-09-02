@@ -565,12 +565,10 @@ button, input, select, textarea {
 .card-img img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* poori image dikhe, crop na ho */
-    background-size: contain;
+    object-fit: cover; /* image box ko poora cover kare, khali space na rahe */
+    background-size: cover;
     background-position: center center;
     object-position: center center;
-    background-repeat: no-repeat;
-    background-color: var(--bg-surface); /* image ke upar-neeche khali jagah me background */
     display: block;
     transition: transform 0.5s var(--ease-smooth);
 }
