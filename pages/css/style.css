@@ -1893,9 +1893,9 @@ table td {
     position: fixed;
     top: 0;
     left: 0;
-    width: 36px;
-    height: 36px;
-    border: 2px solid rgba(248, 68, 100, 0.85);
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid rgba(248, 68, 100, 0.85);
     border-radius: 50%;
     pointer-events: none;
     z-index: 99999;
@@ -1906,8 +1906,8 @@ table td {
 
 /* Interactive element (link/button/input) par hover karne par ring bada + halka bhar jaata hai */
 .cursor-ring.cursor-ring-hover {
-    width: 56px;
-    height: 56px;
+    width: 40px;
+    height: 40px;
     border-color: rgba(248, 68, 100, 0.9);
     background: rgba(248, 68, 100, 0.12);
 }
@@ -1931,13 +1931,13 @@ table td {
 /* Mobile / chhoti screen par cursor ring chhota */
 @media (max-width: 768px) {
     .cursor-ring {
-        width: 24px;
-        height: 24px;
-        border-width: 1.5px;
+        width: 18px;
+        height: 18px;
+        border-width: 1px;
     }
     .cursor-ring.cursor-ring-hover {
-        width: 36px;
-        height: 36px;
+        width: 28px;
+        height: 28px;
     }
     .cursor-ring-dot {
         width: 4px;
@@ -1947,12 +1947,12 @@ table td {
 
 @media (max-width: 360px) {
     .cursor-ring {
-        width: 18px;
-        height: 18px;
+        width: 14px;
+        height: 14px;
         border-width: 1px;
     }
     .cursor-ring.cursor-ring-hover {
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
     }
 }
