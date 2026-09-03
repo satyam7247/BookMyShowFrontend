@@ -1927,3 +1927,32 @@ table td {
     transition: opacity 0.25s ease;
     will-change: transform;
 }
+
+/* Mobile / chhoti screen par cursor ring chhota */
+@media (max-width: 768px) {
+    .cursor-ring {
+        width: 24px;
+        height: 24px;
+        border-width: 1.5px;
+    }
+    .cursor-ring.cursor-ring-hover {
+        width: 36px;
+        height: 36px;
+    }
+    .cursor-ring-dot {
+        width: 4px;
+        height: 4px;
+    }
+}
+
+@media (max-width: 360px) {
+    .cursor-ring {
+        width: 18px;
+        height: 18px;
+        border-width: 1px;
+    }
+    .cursor-ring.cursor-ring-hover {
+        width: 28px;
+        height: 28px;
+    }
+}
