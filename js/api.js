@@ -130,9 +130,14 @@ const MovieAPI = {
     delete: (id) => apiDelete(`/movies/${id}`),
     // Best-effort share count persistence; silently fails if the backend has no such endpoint
     incrementShare: (id) => apiPost(`/movies/${id}/share`, {}),
-    // Best-effort like persistence; silently fails if the backend has no such endpoint
+    // Like persistence - response me updated likeCount aata hai (pure backend, localStorage nahi)
     incrementLike: (id) => apiPost(`/movies/${id}/like`, {}),
-    removeLike: (id) => apiDelete(`/movies/${id}/like`).catch(() => {})
+    removeLike: async (id) => {
+        const res = await fetch(`${API}/movies/${id}/like`, { method: 'DELETE' });
+        const text = await res.text().catch(() => '');
+        if (!res.ok) throw new Error(text || res.statusText || 'Unlike failed');
+        return text ? JSON.parse(text) : null;
+    }
 };
 
 const TheaterAPI = {

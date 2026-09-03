@@ -524,9 +524,8 @@ function incrementShareCount(movieId) {
     }
 }
 
-// ===== MOVIE LIKES =====
-const LIKE_STORE_KEY = 'bms_movie_likes';
-const LIKED_BY_USER_KEY = 'bms_movie_liked_by_user';
+// ===== MOVIE LIKES (pure backend - localStorage use nahi hota) =====
+const likedByUserSession = new Set(); // sirf current page session ke liye (refresh par reset)
 
 // Heart icon SVG (Material Symbols style) — used everywhere for likes
 function heartIconSVG() {
@@ -539,63 +538,43 @@ function likeCountLabel(count) {
     return count === 1 ? '1 Like' : `${count} Likes`;
 }
 
-function getLikeStore() {
-    try { return JSON.parse(localStorage.getItem(LIKE_STORE_KEY)) || {}; }
-    catch { return {}; }
-}
-
-function getLikedByUser() {
-    try { return JSON.parse(localStorage.getItem(LIKED_BY_USER_KEY)) || []; }
-    catch { return []; }
-}
-
-// Base count: backend value if available on the movie object, else 0; local likes add on top
+// Count sirf backend se - movie object ka likeCount field
 function getMovieLikeCount(movie) {
-    const serverLikes = Number(movie?.likeCount ?? movie?.likes ?? movie?.like ?? 0) || 0;
-    const localDelta = getLikeStore()[String(movie?.id)] || 0;
-    return serverLikes + localDelta;
+    return Number(movie?.likeCount ?? movie?.likes ?? movie?.like ?? 0) || 0;
 }
 
 function isMovieLikedByUser(movieId) {
-    return getLikedByUser().includes(String(movieId));
+    return likedByUserSession.has(String(movieId));
 }
 
-function toggleMovieLike(event, movieId) {
+// Like/unlike: seedha backend call, response me updated likeCount aata hai
+async function toggleMovieLike(event, movieId) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     const id = String(movieId);
-    const liked = getLikedByUser();
-    const store = getLikeStore();
-    const alreadyLiked = liked.includes(id);
+    const alreadyLiked = likedByUserSession.has(id);
 
-    if (alreadyLiked) {
-        // Unlike: local delta only goes down to 0 (never below server count)
-        const idx = liked.indexOf(id);
-        liked.splice(idx, 1);
-        store[id] = Math.max((store[id] || 0) - 1, 0);
-        localStorage.setItem(LIKED_BY_USER_KEY, JSON.stringify(liked));
-        localStorage.setItem(LIKE_STORE_KEY, JSON.stringify(store));
-        // Best-effort backend unlike (silently fails if endpoint doesn't exist)
-        if (typeof MovieAPI !== 'undefined' && MovieAPI.removeLike) MovieAPI.removeLike(id);
-    } else {
-        // Like: count once per user (duplicate clicks do nothing extra)
-        liked.push(id);
-        store[id] = (store[id] || 0) + 1;
-        localStorage.setItem(LIKED_BY_USER_KEY, JSON.stringify(liked));
-        localStorage.setItem(LIKE_STORE_KEY, JSON.stringify(store));
-        // Best-effort backend persistence
-        if (typeof MovieAPI !== 'undefined' && MovieAPI.incrementLike) {
-            MovieAPI.incrementLike(id).catch(() => {});
-        }
-    }
+    // UI turant update karo (optimistic)
+    if (alreadyLiked) likedByUserSession.delete(id);
+    else likedByUserSession.add(id);
 
-    // Update button UI without re-rendering the whole grid
     const btn = document.querySelector(`.btn-like[data-movie-id="${id}"]`);
-    if (btn) {
-        const delta = getLikeStore()[id] || 0;
-        let base = 0;
-        if (window.__movieLikeBase) base = window.__movieLikeBase[id] || 0;
-        btn.innerHTML = `${heartIconSVG()} <span class="like-count">${likeCountLabel(base + delta)}</span>`;
-        btn.classList.toggle('liked', !alreadyLiked);
+    btn?.classList.toggle('liked', !alreadyLiked);
+
+    try {
+        const updated = alreadyLiked
+            ? await MovieAPI.removeLike(id)
+            : await MovieAPI.incrementLike(id);
+
+        // Backend se total count lo, UI update karo
+        const total = Number(updated?.likeCount ?? updated?.data?.likeCount);
+        const countEl = btn?.querySelector('.like-count');
+        if (countEl) countEl.textContent = likeCountLabel(Number.isFinite(total) ? total : null);
+    } catch (err) {
+        // Backend fail -> state wapas roll back karo
+        if (alreadyLiked) likedByUserSession.add(id);
+        else likedByUserSession.delete(id);
+        btn?.classList.toggle('liked', alreadyLiked);
+        if (typeof showToast === 'function') showToast('Like save nahi hua - thodi der baad try karo', 'error');
     }
 }
 

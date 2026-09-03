@@ -359,7 +359,6 @@
                     </div>
                 `;
                 window.__movieLikeBase = window.__movieLikeBase || {};
-                window.__movieLikeBase[String(movie.id)] = getMovieLikeCount(movie) - (getLikeStore()[String(movie.id)] || 0);
                 loadShows();
             } catch (e) {
                 document.getElementById('movie-detail-hero').innerHTML = `
