@@ -1900,16 +1900,13 @@ table td {
     pointer-events: none;
     z-index: 99999;
     opacity: 0;
-    transition: opacity 0.25s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    transition: opacity 0.25s ease, border-color 0.2s ease;
     will-change: transform;
 }
 
-/* Interactive element (link/button/input) par hover karne par ring bada + halka bhar jaata hai */
+/* Clickable element (link/button/input) par jaane par ring white ho jaata hai - size same rehta hai */
 .cursor-ring.cursor-ring-hover {
-    width: 40px;
-    height: 40px;
-    border-color: rgba(248, 68, 100, 0.9);
-    background: rgba(248, 68, 100, 0.12);
+    border-color: rgba(255, 255, 255, 0.95);
 }
 
 /* Chhota dot jo exact mouse position par chipka rehta hai */
@@ -1917,27 +1914,28 @@ table td {
     position: fixed;
     top: 0;
     left: 0;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     background: var(--primary, #f84464);
     border-radius: 50%;
     pointer-events: none;
     z-index: 99999;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease, background 0.2s ease;
     will-change: transform;
 }
 
-/* Mobile / chhoti screen par cursor ring chhota */
+/* Clickable par dot bhi white */
+.cursor-ring-dot.cursor-ring-hover {
+    background: #ffffff;
+}
+
+/* Mobile / chhoti screen par cursor ring chhota (size har jagah same, sirf screen ke hisaab se chhota) */
 @media (max-width: 768px) {
     .cursor-ring {
         width: 18px;
         height: 18px;
         border-width: 1px;
-    }
-    .cursor-ring.cursor-ring-hover {
-        width: 28px;
-        height: 28px;
     }
     .cursor-ring-dot {
         width: 4px;
@@ -1950,9 +1948,5 @@ table td {
         width: 14px;
         height: 14px;
         border-width: 1px;
-    }
-    .cursor-ring.cursor-ring-hover {
-        width: 22px;
-        height: 22px;
     }
 }

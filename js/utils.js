@@ -610,10 +610,11 @@ function getShareCount(movieId) {
             // First appearance par ring ko jump na karaye
             ringX = mouseX; ringY = mouseY;
         }
-        // Interactive element par hover - ring bada + color change
+        // Interactive element par hover - ring white ho jaata hai (size same rehta hai)
         const target = e.target;
         const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
         ring.classList.toggle('cursor-ring-hover', !!interactive);
+        dot.classList.toggle('cursor-ring-hover', !!interactive);
     }, { passive: true });
 
     document.addEventListener('mouseleave', () => {
