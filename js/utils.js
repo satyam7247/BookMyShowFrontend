@@ -585,10 +585,8 @@ function getShareCount(movieId) {
 
 // ===== CUSTOM CURSOR RING POINTER =====
 // Gola ring jo mouse ke peeche smoothly follow karta hai (pure website par)
+// Mobile par: touch/tap karne par ring us jagah dikhti hai aur thodi der baad fade out
 (function initCursorRing() {
-    // Touch devices par cursor nahi hota - skip karo
-    if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
-
     const ring = document.createElement('div');
     ring.className = 'cursor-ring';
     const dot = document.createElement('div');
@@ -599,7 +597,52 @@ function getShareCount(movieId) {
     let mouseX = -100, mouseY = -100;   // actual mouse position
     let ringX = -100, ringY = -100;     // ring ka current (lerped) position
     let visible = false;
+    const isTouchOnly = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    let touchHideTimer = null;
 
+    function showAt(x, y) {
+        mouseX = x; mouseY = y;
+        ringX = x; ringY = y;
+        visible = true;
+        ring.style.opacity = '1';
+        dot.style.opacity = '1';
+    }
+
+    if (isTouchOnly) {
+        // ===== MOBILE / TOUCH: tap karne par ring dikhao, ~600ms baad fade out =====
+        document.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            if (touchHideTimer) clearTimeout(touchHideTimer);
+            showAt(t.clientX, t.clientY);
+            // Clickable par touch - ring white
+            const target = e.target;
+            const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
+            ring.classList.toggle('cursor-ring-hover', !!interactive);
+            dot.classList.toggle('cursor-ring-hover', !!interactive);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            // Scroll/drag ke dauran ring finger ke saath chalti hai
+            const t = e.touches[0];
+            if (!t) return;
+            showAt(t.clientX, t.clientY);
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            // Thodi der baad ring gayab
+            touchHideTimer = setTimeout(() => {
+                visible = false;
+                ring.style.opacity = '0';
+                dot.style.opacity = '0';
+            }, 600);
+        }, { passive: true });
+
+        // Touch mode me mouse-follow animation ki zaroorat nahi (position direct set hoti hai)
+        return;
+    }
+
+    // ===== DESKTOP: ring mouse ke peeche smoothly follow karti hai =====
     document.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
@@ -610,7 +653,7 @@ function getShareCount(movieId) {
             // First appearance par ring ko jump na karaye
             ringX = mouseX; ringY = mouseY;
         }
-        // Interactive element par hover - ring white ho jaata hai (size same rehta hai)
+        // Clickable element (link/button/input) par hover - ring white ho jaata hai (size same rehta hai)
         const target = e.target;
         const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
         ring.classList.toggle('cursor-ring-hover', !!interactive);
