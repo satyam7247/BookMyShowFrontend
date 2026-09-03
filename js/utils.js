@@ -56,7 +56,7 @@ function updateNavUser() {
         // Chhoti circular profile photo (localStorage me saved) — na ho to initial letter
         let avatarHtml;
         try {
-            const photo = localStorage.getItem(`bms_profile_photo_${user.id}`);
+            const photo = localStorage.getItem(`bms_profile_photo_${user.id}`) || user.profilePhoto || '';
             avatarHtml = photo
                 ? `<img src="${photo}" alt="Me" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" />`
                 : `<span style="width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem; border:2px solid var(--primary);">${(user.name || 'U').charAt(0).toUpperCase()}</span>`;
@@ -603,6 +603,55 @@ function getShareCount(movieId) {
     const shares = JSON.parse(localStorage.getItem('bms_movie_shares') || '{}');
     return shares[movieId] || 0;
 }
+
+// ===== CUSTOM CURSOR RING POINTER =====
+// Gola ring jo mouse ke peeche smoothly follow karta hai (pure website par)
+(function initCursorRing() {
+    // Touch devices par cursor nahi hota - skip karo
+    if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+
+    const ring = document.createElement('div');
+    ring.className = 'cursor-ring';
+    const dot = document.createElement('div');
+    dot.className = 'cursor-ring-dot';
+    document.body.appendChild(ring);
+    document.body.appendChild(dot);
+
+    let mouseX = -100, mouseY = -100;   // actual mouse position
+    let ringX = -100, ringY = -100;     // ring ka current (lerped) position
+    let visible = false;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        if (!visible) {
+            visible = true;
+            ring.style.opacity = '1';
+            dot.style.opacity = '1';
+            // First appearance par ring ko jump na karaye
+            ringX = mouseX; ringY = mouseY;
+        }
+        // Interactive element par hover - ring bada + color change
+        const target = e.target;
+        const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
+        ring.classList.toggle('cursor-ring-hover', !!interactive);
+    }, { passive: true });
+
+    document.addEventListener('mouseleave', () => {
+        visible = false;
+        ring.style.opacity = '0';
+        dot.style.opacity = '0';
+    });
+
+    // Smooth follow: har frame par ring mouse ki taraf thoda-thoda move karta hai
+    (function animateRing() {
+        ringX += (mouseX - ringX) * 0.18;
+        ringY += (mouseY - ringY) * 0.18;
+        ring.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
+        dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+        requestAnimationFrame(animateRing);
+    })();
+})();
 
 // ===== ON LOAD =====
 document.addEventListener('DOMContentLoaded', () => {

@@ -1827,8 +1827,19 @@ table td {
         flex-wrap: wrap;
     }
     .grid-4 .card-body .badge {
-        font-size: 0.6rem;
-        padding: 0.15rem 0.35rem;
+        font-size: 0.65rem;
+        padding: 0.18rem 0.4rem;
+        white-space: nowrap; /* badge beech me cut na ho */
+        line-height: 1.2;
+    }
+    /* Rating badge kabhi squeeze na ho - star hamesha dikhe */
+    .grid-4 .card-body .badge-rating {
+        flex-shrink: 0;
+        font-weight: 800;
+    }
+    .grid-4 .card-body .badge-rating span {
+        font-size: 0.75rem; /* star ko badge text se bada rakho taaki mobile par bhi clearly dikhe */
+        line-height: 1;
     }
     .grid-4 .card-footer {
         padding: 0.5rem 0.65rem;
@@ -1860,4 +1871,59 @@ table td {
     .grid-4 .card-body h3 {
         font-size: 0.82rem;
     }
+    /* Bahut chhoti screen par bhi badges + star readable rahen */
+    .grid-4 .card-body .badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.35rem;
+    }
+    .grid-4 .card-body .badge-rating span {
+        font-size: 0.7rem;
+    }
+    /* Lambi genre text badge ko full width na le - rating badge niche wrap ho jayegi */
+    .grid-4 .card-body .badge-genre {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* ===== CUSTOM CURSOR RING POINTER ===== */
+/* Gola ring jo mouse ke peeche follow karta hai - poore site par (utils.js se inject hota hai) */
+.cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 36px;
+    border: 2px solid rgba(248, 68, 100, 0.85);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.25s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    will-change: transform;
+}
+
+/* Interactive element (link/button/input) par hover karne par ring bada + halka bhar jaata hai */
+.cursor-ring.cursor-ring-hover {
+    width: 56px;
+    height: 56px;
+    border-color: rgba(248, 68, 100, 0.9);
+    background: rgba(248, 68, 100, 0.12);
+}
+
+/* Chhota dot jo exact mouse position par chipka rehta hai */
+.cursor-ring-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    background: var(--primary, #f84464);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    will-change: transform;
 }
