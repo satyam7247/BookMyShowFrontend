@@ -174,6 +174,30 @@ async function readFileAsDataUrl(file) {
     });
 }
 
+// Image ko compress karke chhota data URL banata hai (mobile ke bade photos ke liye - bade base64 se save fail hota hai)
+async function compressImageFile(file, maxSize = 800, quality = 0.8) {
+    if (!file) return '';
+    const dataUrl = await readFileAsDataUrl(file);
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            // Aspect ratio maintain karte hue maxSize me fit karo
+            let { width, height } = img;
+            if (width > maxSize || height > maxSize) {
+                if (width > height) { height = Math.round(height * (maxSize / width)); width = maxSize; }
+                else { width = Math.round(width * (maxSize / height)); height = maxSize; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl); // compress na ho paye to original bhej do
+        img.src = dataUrl;
+    });
+}
+
 async function resolvePosterSource(input) {
     const source = normalizeSourceUrl(input);
     if (!source) return '';

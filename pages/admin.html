@@ -329,8 +329,8 @@
         </div>
     </div>
 
-    <script src="../js/api.js"></script>
-    <script src="../js/utils.js"></script>
+    <script src="../js/api.js?v=2"></script>
+    <script src="../js/utils.js?v=2"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const user = getLoggedInUser();
@@ -415,7 +415,7 @@
             const posterInput = document.getElementById('movie-poster').value.trim();
             const posterFile = document.getElementById('movie-poster-file').files?.[0] || null;
             const posterUrl = posterFile
-                ? await readFileAsDataUrl(posterFile)
+                ? await compressImageFile(posterFile) // mobile ke bade photos compress - warna request fail hoti hai
                 : posterInput
                     ? await resolvePosterSource(posterInput)
                     : null;
