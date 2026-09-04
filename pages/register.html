@@ -31,8 +31,11 @@
             padding: 1.15rem 1rem;       /* tight */
             animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .auth-card .auth-header { margin-bottom: 1.25rem; }
-        .auth-card .auth-header h2 { font-size: 1.5rem; }
+        .auth-card .auth-header { margin-bottom: 0.85rem; }
+        .auth-card .auth-header h2 { font-size: 1.25rem; margin: 0 0 0.15rem; }
+        .auth-card .auth-header p  { font-size: 0.75rem; margin: 0; }
+        .auth-card .form-group { margin-bottom: 0.55rem; }
+        .auth-card .auth-footer { margin-top: 0.85rem; }
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(36px) scale(0.96); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -161,7 +164,7 @@
                     <label>Password</label>
                     <input type="password" id="password" placeholder="" required autocomplete="new-password">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem; padding: 0.85rem;">
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.6rem; padding: 0.7rem;">
                     Sign Up
                 </button>
             </form>

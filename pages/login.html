@@ -26,10 +26,12 @@
 
         /* Card entrance + animated gradient border glow */
         .auth-card { position: relative; z-index: 1; max-width: 300px; padding: 1.15rem 1rem; animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
-        .auth-card .auth-header { margin-bottom: 1.25rem; }
-        .auth-card .auth-header h2 { font-size: 1.5rem; }
-        .auth-card .form-group { margin-bottom: 0.7rem; }
-        .auth-card .auth-footer { margin-top: 1rem; }
+        .auth-card .auth-header { margin-bottom: 0.9rem; }
+        .auth-card .auth-header h2 { font-size: 1.3rem; margin: 0 0 0.2rem; }
+        .auth-card .auth-header p  { font-size: 0.78rem; margin: 0; }
+        .auth-card .form-group { margin-bottom: 0.55rem; }
+        .auth-card .auth-footer { margin-top: 0.85rem; }
+        .auth-card .login-divider { margin: 0.6rem 0; }
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(36px) scale(0.96); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -61,16 +63,7 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Waving hand */
-        .fa-hand { display: inline-block; transform-origin: 70% 70%; animation: wave 2.2s ease-in-out 1s infinite; }
-        @keyframes wave {
-            0%, 60%, 100% { transform: rotate(0deg); }
-            10% { transform: rotate(16deg); }
-            20% { transform: rotate(-10deg); }
-            30% { transform: rotate(14deg); }
-            40% { transform: rotate(-6deg); }
-            50% { transform: rotate(10deg); }
-        }
+        /* (waving hand animation removed) */
 
         /* Input focus: lift + pink glow */
         .auth-card .form-group input { transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
@@ -154,7 +147,7 @@
     <div class="auth-wrapper">
         <div class="auth-card">
             <div class="auth-header">
-                <h2>Welcome Back <i class="fa-solid fa-hand"></i></h2>
+                <h2>Welcome Back</h2>
                 <p>Sign in to access your movie bookings & admin controls</p>
             </div>
             
@@ -167,7 +160,7 @@
                     <label>Password</label>
                     <input type="password" id="password" placeholder="" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem; padding: 0.85rem;">
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.6rem; padding: 0.7rem;">
                     Sign In
                 </button>
             </form>
