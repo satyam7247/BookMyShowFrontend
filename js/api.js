@@ -182,6 +182,8 @@ const PaymentAPI = {
 const UserAPI = {
     getAll: () => apiGet('/users'),
     login: (data) => apiPost('/users/login', data),
+    // Google login - backend verify karega ID token; fail hone par frontend local login fallback karega
+    googleLogin: (data) => apiPostFallback(['/users/google-login', '/users/google', '/auth/google', '/users/social-login'], data),
     register: (data) => apiPost('/users/register', data),
     getById: (id) => apiGet(`/users/${id}`),
     update: (id, data) => apiPutFallback([`/users/${id}`, `/users/update/${id}`, `/users/${id}/update`], data)
