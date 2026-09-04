@@ -25,7 +25,9 @@
         }
 
         /* Card entrance + animated gradient border glow */
-        .auth-card { position: relative; z-index: 1; animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .auth-card { position: relative; z-index: 1; max-width: 380px; padding: 1.75rem 1.5rem; animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .auth-card .auth-header { margin-bottom: 1.25rem; }
+        .auth-card .auth-header h2 { font-size: 1.5rem; }
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(36px) scale(0.96); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
