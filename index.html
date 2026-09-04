@@ -165,6 +165,7 @@
               ? '<span class="btn btn-sm btn-primary">Book Tickets</span>'
               : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='pages/admin.html?editMovie=${m.id}'">Edit Movie</span>`;
             const likeDisplay = `<span class="btn-like like-display ${isMovieLikedByUser(m.id) ? 'liked' : ''}" title="Like this movie on its detail page">${heartIconSVG()} <span class="like-count">${likeCountLabel(getMovieLikeCount(m))}</span></span>`;
+            const ratingDisplay = m.rating ? `<span class="badge badge-rating" title="IMDb-style rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating}</span>` : '';
                         return `
                 <a href="pages/movie-detail.html?id=${m.id}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
@@ -175,6 +176,7 @@
                     </div>
                     <div class="card-footer">
                         ${likeDisplay}
+                        ${ratingDisplay}
                         ${movieAction}
                     </div>
                 </a>

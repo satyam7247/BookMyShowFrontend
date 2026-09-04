@@ -412,13 +412,21 @@
         }
 
         async function addMovie() {
+            const saveBtn = document.getElementById('movie-save-btn');
             const posterInput = document.getElementById('movie-poster').value.trim();
             const posterFile = document.getElementById('movie-poster-file').files?.[0] || null;
-            const posterUrl = posterFile
-                ? await compressImageFile(posterFile) // mobile ke bade photos compress - warna request fail hoti hai
-                : posterInput
-                    ? await resolvePosterSource(posterInput)
-                    : null;
+            let posterUrl = null;
+            // Compress/resolve fail ho to clear message ke saath ruko — silent fail nahi
+            try {
+                posterUrl = posterFile
+                    ? await compressImageFile(posterFile) // mobile ke bade photos compress - warna request fail hoti hai
+                    : posterInput
+                        ? await resolvePosterSource(posterInput)
+                        : null;
+            } catch (e) {
+                showToast(e.message || 'Image process nahi ho payi', 'error');
+                return;
+            }
             const data = {
                 title: document.getElementById('movie-title').value.trim(),
                 genre: document.getElementById('movie-genre').value.trim(),
@@ -440,6 +448,10 @@
                 banner: posterUrl
             };
             if (!data.title) { showToast('Please enter movie title', 'error'); return; }
+            // Mobile par request thodi der leti hai — button disable karke double-tap se bachein
+            const originalBtnText = saveBtn.textContent;
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
             try {
                 if (editingMovieId) {
                     await MovieAPI.update(editingMovieId, data);
@@ -451,7 +463,11 @@
                     resetMovieForm();
                 }
                 loadMovies();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast(e.message || 'Movie save failed. Internet check karein aur dobara try karein.', 'error'); }
+            finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = editingMovieId ? 'Update Movie' : originalBtnText;
+            }
         }
 
         async function editMovie(id) {

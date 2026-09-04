@@ -932,6 +932,13 @@ button, input, select, textarea {
     background: rgba(0, 0, 0, 0.15);
 }
 
+/* Card footer ka rating badge (like icon ke side) - squeeze na ho */
+.card-footer .badge-rating {
+    flex-shrink: 0;
+    font-weight: 800;
+    font-size: 0.78rem;
+}
+
 .card-footer .duration {
     font-size: 0.82rem;
     color: var(--text-secondary);

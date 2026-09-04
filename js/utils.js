@@ -174,26 +174,57 @@ async function readFileAsDataUrl(file) {
     });
 }
 
+// Chhota helper: image ko canvas me scale karke JPEG data URL banata hai
+function drawScaledImage(img, maxSize, quality) {
+    let { width, height } = img;
+    if (width > maxSize || height > maxSize) {
+        if (width > height) { height = Math.round(height * (maxSize / width)); width = maxSize; }
+        else { width = Math.round(width * (maxSize / height)); height = maxSize; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', quality);
+}
+
 // Image ko compress karke chhota data URL banata hai (mobile ke bade photos ke liye - bade base64 se save fail hota hai)
 async function compressImageFile(file, maxSize = 800, quality = 0.8) {
     if (!file) return '';
-    const dataUrl = await readFileAsDataUrl(file);
-    return new Promise((resolve) => {
+    let dataUrl = '';
+    try {
+        dataUrl = await readFileAsDataUrl(file);
+    } catch {
+        throw new Error('Image file read nahi ho payi. Dobara try karein.');
+    }
+    return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-            // Aspect ratio maintain karte hue maxSize me fit karo
-            let { width, height } = img;
-            if (width > maxSize || height > maxSize) {
-                if (width > height) { height = Math.round(height * (maxSize / width)); width = maxSize; }
-                else { width = Math.round(width * (maxSize / height)); height = maxSize; }
+            try {
+                // Pehle normal compress karo
+                let size = maxSize, q = quality;
+                let out = drawScaledImage(img, size, q);
+                // Mobile ke bade photos: agar phir bhi bada hai to progressively aur chhota karo
+                let attempts = 0;
+                while (out.length > 400000 && attempts < 4) {
+                    size = Math.round(size * 0.75);
+                    q = Math.max(0.5, q - 0.1);
+                    out = drawScaledImage(img, size, q);
+                    attempts++;
+                }
+                // Itna bada payload backend accept nahi karega — clear error do, silent fail mat karo
+                if (out.length > 700000) {
+                    reject(new Error('Image bahut badi hai. Chhoti image select karein ya Poster Image URL paste karein.'));
+                    return;
+                }
+                resolve(out);
+            } catch (err) {
+                reject(new Error('Image process nahi ho payi. Dusri image try karein.'));
             }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', quality));
         };
-        img.onerror = () => resolve(dataUrl); // compress na ho paye to original bhej do
+        // HEIC (iPhone photos) jaise formats mobile browser me canvas me decode nahi hote —
+        // original bhejne se request fail hoti thi, ab clear message dikhega
+        img.onerror = () => reject(new Error('Ye image format support nahi hai (iPhone HEIC photo?). JPG/PNG image use karein ya Poster Image URL paste karein.'));
         img.src = dataUrl;
     });
 }
