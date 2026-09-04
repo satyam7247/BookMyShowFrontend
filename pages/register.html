@@ -27,8 +27,8 @@
         /* Card: chhota + entrance + animated gradient border */
         .auth-card {
             position: relative; z-index: 1;
-            max-width: 330px;            /* pehle 370px tha - aur compact */
-            padding: 1.4rem 1.15rem;     /* pehle 1.75rem 1.5rem tha */
+            max-width: 290px;            /* compact */
+            padding: 1.15rem 1rem;       /* tight */
             animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .auth-card .auth-header { margin-bottom: 1.25rem; }
@@ -147,19 +147,19 @@
             <form id="register-form" onsubmit="handleRegister(event)">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" id="name" placeholder="e.g. Satyam Sahu" required autocomplete="name">
+                    <input type="text" id="name" placeholder="" required autocomplete="name">
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="email" placeholder="e.g. satyam@example.com" required autocomplete="email">
+                    <input type="email" id="email" placeholder="" required autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" id="phone" placeholder="e.g. 9876543210" autocomplete="tel">
+                    <input type="tel" id="phone" placeholder="" autocomplete="tel">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="password" placeholder="Create a strong password" required autocomplete="new-password">
+                    <input type="password" id="password" placeholder="" required autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem; padding: 0.85rem;">
                     Sign Up
