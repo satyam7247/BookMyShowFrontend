@@ -39,10 +39,15 @@
     <script>
         function getBookingSeatText(seatData) {
             if (!seatData) return 'N/A';
+            // Plain string (localStorage bookings: "A1, A2") seedha return karo
+            if (typeof seatData === 'string') return seatData.trim() || 'N/A';
             if (Array.isArray(seatData)) {
-                return seatData.map(seat => seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`).join(', ');
+                return seatData.map(seat => typeof seat === 'object' ? (seat.seatNumber || seat.seat || `${seat.row || ''}${seat.col || ''}`) : seat).join(', ');
             }
-            return seatData.seatNumber || seatData.seat || `${seatData.row || ''}${seatData.col || ''}` || 'N/A';
+            if (typeof seatData === 'object') {
+                return seatData.seatNumber || seatData.seat || `${seatData.row || ''}${seatData.col || ''}` || 'N/A';
+            }
+            return String(seatData) || 'N/A';
         }
 
             function formatBookingCard(booking) {
@@ -64,19 +69,19 @@
                             </h3>
                             <div style="display: flex; flex-direction: column; gap: 0.6rem; color: var(--text-secondary); font-size: 0.95rem;">
                                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                                    <i class="fa-solid fa-building-columns" style="width: 20px; color: var(--primary); text-align:center;"></i> 
+                                    <i class="fa-solid fa-building-columns" style="width: 20px; color: #ffffff; text-align:center;"></i> 
                                     <span>${booking.show?.screen?.theater?.name || booking.theaterName || 'Cinema Hall'} — <span style="color:var(--text-main);">${booking.show?.screen?.name || booking.screenName || 'Audi'}</span></span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                                    <i class="fa-regular fa-calendar-days" style="width: 20px; color: var(--primary); text-align:center;"></i> 
-                                    <span>${booking.show?.showDate || booking.showDate || 'Date'} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color: var(--primary);"></i> ${booking.show?.startTime || booking.startTime || 'Time'}</span>
+                                    <i class="fa-regular fa-calendar-days" style="width: 20px; color: #ffffff; text-align:center;"></i> 
+                                    <span>${booking.show?.showDate || booking.showDate || 'Date'} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color: #ffffff;"></i> ${booking.show?.startTime || booking.startTime || 'Time'}</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                                    <i class="fa-solid fa-couch" style="width: 20px; color: var(--primary); text-align:center;"></i> 
+                                    <i class="fa-solid fa-couch" style="width: 20px; color: #ffffff; text-align:center;"></i> 
                                     <span>Seats: <strong style="color: var(--primary); font-size: 1.1rem;">${seats}</strong></span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                                    <i class="fa-solid fa-hotdog" style="width: 20px; color: var(--accent); text-align:center;"></i> 
+                                    <i class="fa-solid fa-hotdog" style="width: 20px; color: #ffffff; text-align:center;"></i> 
                                     <span>Snacks: <span style="color:var(--accent); font-weight:600;">${foodText}</span></span>
                                 </div>
                             </div>
