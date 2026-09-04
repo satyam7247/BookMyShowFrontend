@@ -29,6 +29,11 @@
         <div id="bookings-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
     </div>
 
+    <!-- ===== TICKET VIEW MODAL ===== -->
+    <div id="ticket-modal" onclick="if(event.target===this) closeTicketModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; padding:1rem; overflow-y:auto;">
+        <div id="ticket-modal-content" style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius-lg); max-width:520px; width:100%; margin:auto;"></div>
+    </div>
+
     <script src="../js/api.js?v=2"></script>
     <script src="../js/utils.js?v=2"></script>
     <script>
@@ -87,6 +92,12 @@
                             <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--success); margin-bottom: 1.25rem; text-shadow: 0 0 20px var(--success-glow);">₹${booking.totalPrice || 0}</div>
                             
                             <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                                <button class="btn btn-sm btn-primary" style="width: 100%; font-weight: 700;" onclick="viewTicket('${booking.id}')">
+                                    <i class="fa-solid fa-ticket"></i> View Ticket
+                                </button>
+                                <button class="btn btn-sm btn-outline" style="border-color: var(--accent); color: var(--accent); width: 100%; font-weight: 700;" onclick="downloadTicket('${booking.id}')">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </button>
                                 <button class="btn btn-sm btn-outline" style="border-color: var(--danger); color: var(--danger); width: 100%; font-weight: 700;" onclick="cancelBooking('${booking.id}')">
                                     <i class="fa-solid fa-trash-can"></i> Cancel Ticket
                                 </button>
@@ -120,15 +131,204 @@
             try {
                 const bookings = await BookingAPI.getByUser(user.id);
                 const visible = (bookings || []).filter(b => String(b.status || '').toUpperCase() !== 'CANCELLED');
-
-                if (!visible.length) {
-                    showEmpty('bookings-list', 'No bookings yet. Go book some movies! <i class="fa-solid fa-clapperboard"></i>');
-                    return;
-                }
-
-                document.getElementById('bookings-list').innerHTML = visible.map(formatBookingCard).join('');
+                renderBookings(visible);
             } catch (e) {
-                showEmpty('bookings-list', 'Could not load your ticket history.');
+                // Backend fail ho to bhi localStorage bookings dikhao
+                renderBookings([]);
+            }
+        }
+
+        // Backend bookings + localStorage (payment-time offline saved) bookings dono merge karke dikhao
+        function renderBookings(apiBookings) {
+            let localBookings = [];
+            try {
+                const user = getLoggedInUser();
+                localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]')
+                    .filter(b => !user || !b.userEmail || b.userEmail === user.email)
+                    .filter(b => String(b.status || '').toUpperCase() !== 'CANCELLED');
+            } catch (e) { localBookings = []; }
+
+            // Backend booking IDs jo already dikh chuki hain, unki local copy dubara na dikhe
+            const apiIds = new Set((apiBookings || []).map(b => String(b.id)));
+            const merged = [...(apiBookings || []), ...localBookings.filter(b => !apiIds.has(String(b.id)))];
+
+            if (!merged.length) {
+                showEmpty('bookings-list', 'No bookings yet. Go book some movies! <i class="fa-solid fa-clapperboard"></i>');
+                return;
+            }
+
+            // Nayi booking sabse upar
+            merged.sort((a, b) => new Date(b.bookedAt || 0) - new Date(a.bookedAt || 0));
+            currentBookings = merged; // View/Download ticket ke liye
+            document.getElementById('bookings-list').innerHTML = merged.map(formatBookingCard).join('');
+        }
+
+        // ===== TICKET DATA HELPERS =====
+        let currentBookings = [];
+        function getBookingById(id) {
+            return currentBookings.find(b => String(b.id) === String(id));
+        }
+        function getTicketData(b) {
+            return {
+                title: b.show?.movie?.title || b.movieTitle || 'Movie',
+                theater: b.show?.screen?.theater?.name || b.theaterName || 'Cinema Hall',
+                screen: b.show?.screen?.name || b.screenName || 'Audi',
+                date: b.show?.showDate || b.showDate || '—',
+                time: b.show?.startTime || b.startTime || '—',
+                seats: getBookingSeatText(b.seats || b.seatNumbers || b.ticketSeats),
+                food: Array.isArray(b.foodItems) && b.foodItems.length
+                    ? b.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ')
+                    : (b.food || 'No snacks added'),
+                price: b.totalPrice || 0,
+                id: b.id,
+                status: String(b.status || 'CONFIRMED').toUpperCase()
+            };
+        }
+        function closeTicketModal() {
+            document.getElementById('ticket-modal').style.display = 'none';
+        }
+
+        // ===== TICKET VIEW MODAL =====
+        function viewTicket(id) {
+            const b = getBookingById(id);
+            if (!b) { showToast('Ticket not found', 'error'); return; }
+            const t = getTicketData(b);
+            document.getElementById('ticket-modal-content').innerHTML = `
+                <div style="background:#0f1219; border-radius:var(--radius-lg); overflow:hidden;">
+                    <div style="background:linear-gradient(135deg, var(--primary), #be123c); padding:1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-family:'Outfit',sans-serif; font-weight:900; font-size:1.2rem; color:#fff;">Book<span style="color:#fde047;">My</span>Show</div>
+                        <div class="badge" style="background:rgba(255,255,255,0.2); color:#fff; font-weight:800; border:1px solid rgba(255,255,255,0.4);">
+                            <i class="fa-solid fa-circle-check"></i> ${t.status === 'CANCELLED' ? 'CANCELLED' : 'CONFIRMED'}
+                        </div>
+                    </div>
+                    <div style="padding:1.5rem;">
+                        <h2 style="font-family:'Outfit',sans-serif; font-size:1.5rem; margin-bottom:1rem; color:#fff; letter-spacing:-0.5px;">${t.title}</h2>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; font-size:0.9rem;">
+                            <div><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Theater</div><div style="color:var(--text-main); font-weight:700;">${t.theater}</div></div>
+                            <div><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Screen</div><div style="color:var(--text-main); font-weight:700;">${t.screen}</div></div>
+                            <div><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Date</div><div style="color:var(--text-main); font-weight:700;">${t.date}</div></div>
+                            <div><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Time</div><div style="color:var(--text-main); font-weight:700;">${t.time}</div></div>
+                            <div style="grid-column:1/-1;"><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Seats</div><div style="color:var(--primary); font-weight:900; font-size:1.2rem; font-family:'Outfit',sans-serif;">${t.seats}</div></div>
+                            <div style="grid-column:1/-1;"><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.2rem;">Snacks</div><div style="color:var(--accent); font-weight:600;">${t.food}</div></div>
+                        </div>
+                        <div style="border-top:2px dashed rgba(255,255,255,0.15); margin:1.25rem 0; padding-top:1rem; display:flex; justify-content:space-between; align-items:center;">
+                            <div><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px;">Total Paid</div><div style="font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:900; color:var(--success);">₹${t.price}</div></div>
+                            <div style="text-align:right;"><div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px;">Booking ID</div><div style="color:var(--text-main); font-weight:800;">#${t.id}</div></div>
+                        </div>
+                        <div style="display:flex; gap:2px; height:44px; align-items:stretch; opacity:0.85;">${Array.from({length: 48}, (_, i) => `<div style="flex:${(i * 7) % 3 + 1}; background:${i % 4 === 0 ? 'transparent' : '#e5e7eb'};"></div>`).join('')}</div>
+                        <div style="text-align:center; color:var(--text-muted); font-size:0.72rem; margin-top:0.4rem;">Show this ticket at the entrance — Enjoy the movie! 🍿</div>
+                    </div>
+                    <div style="padding:0 1.5rem 1.5rem; display:flex; gap:0.75rem;">
+                        <button class="btn btn-primary" style="flex:1; font-weight:700;" onclick="downloadTicket('${t.id}')"><i class="fa-solid fa-download"></i> Download</button>
+                        <button class="btn btn-outline" style="flex:1; font-weight:700;" onclick="closeTicketModal()">Close</button>
+                    </div>
+                </div>`;
+            document.getElementById('ticket-modal').style.display = 'flex';
+        }
+
+        // ===== TICKET DOWNLOAD (PNG via Canvas - koi extra library nahi chahiye) =====
+        function downloadTicket(id) {
+            const b = getBookingById(id);
+            if (!b) { showToast('Ticket not found', 'error'); return; }
+            const t = getTicketData(b);
+            const W = 900, H = 520;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            ctx.fillStyle = '#0f1219';
+            ctx.fillRect(0, 0, W, H);
+
+            // Header band
+            const grad = ctx.createLinearGradient(0, 0, W, 90);
+            grad.addColorStop(0, '#e11d48');
+            grad.addColorStop(1, '#be123c');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, 90);
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'middle';
+            ctx.font = '900 32px Outfit, Arial, sans-serif';
+            ctx.fillText('BookMyShow', 30, 45);
+            ctx.font = '800 18px Arial, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(t.status === 'CANCELLED' ? '✗ CANCELLED' : '✓ CONFIRMED TICKET', W - 30, 45);
+            ctx.textAlign = 'left';
+
+            // Movie title
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 38px Outfit, Arial, sans-serif';
+            ctx.fillText(String(t.title).slice(0, 34), 30, 150);
+
+            // Info rows
+            const rows = [
+                ['THEATER', t.theater],
+                ['SCREEN', t.screen],
+                ['DATE & TIME', t.date + '  •  ' + t.time],
+                ['SEATS', t.seats],
+                ['SNACKS', t.food]
+            ];
+            let y = 205;
+            rows.forEach(function (row) {
+                ctx.fillStyle = '#8b93a7';
+                ctx.font = '700 15px Arial, sans-serif';
+                ctx.fillText(row[0], 30, y);
+                ctx.fillStyle = '#e5e7eb';
+                ctx.font = '700 22px Arial, sans-serif';
+                ctx.fillText(String(row[1]).slice(0, 58), 30, y + 26);
+                y += 58;
+            });
+
+            // Perforation line
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(30, y + 8); ctx.lineTo(W - 30, y + 8);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Total + booking id
+            ctx.fillStyle = '#8b93a7';
+            ctx.font = '700 15px Arial, sans-serif';
+            ctx.fillText('TOTAL PAID', 30, y + 44);
+            ctx.fillStyle = '#34d399';
+            ctx.font = '900 42px Outfit, Arial, sans-serif';
+            ctx.fillText('₹' + t.price, 30, y + 84);
+            ctx.fillStyle = '#8b93a7';
+            ctx.font = '700 15px Arial, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('BOOKING ID', W - 30, y + 44);
+            ctx.fillStyle = '#e5e7eb';
+            ctx.font = '900 30px Arial, sans-serif';
+            ctx.fillText('#' + t.id, W - 30, y + 84);
+            ctx.textAlign = 'left';
+
+            // Barcode strip
+            let bx = 30;
+            const by = H - 60;
+            ctx.fillStyle = '#e5e7eb';
+            for (let i = 0; bx < W - 30 && i < 200; i++) {
+                const bw = ((i * 13) % 4) + 1;
+                if (i % 3 !== 0) ctx.fillRect(bx, by, bw, 34);
+                bx += bw + 2;
+            }
+            ctx.fillStyle = '#8b93a7';
+            ctx.font = '600 13px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Show this ticket at the entrance — Enjoy the movie!', W / 2, H - 12);
+            ctx.textAlign = 'left';
+
+            // PNG download trigger
+            try {
+                const link = document.createElement('a');
+                link.download = 'ticket-' + t.id + '-' + String(t.title).replace(/[^a-z0-9]+/gi, '_') + '.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                showToast('Ticket downloaded!', 'success');
+            } catch (e) {
+                showToast('Download fail hua. Dobara try karein.', 'error');
             }
         }
 
@@ -136,6 +336,12 @@
             if (!confirm('Are you sure you want to cancel this ticket booking?')) return;
             try {
                 await BookingAPI.cancel(id).catch(() => {});
+                // Local (offline saved) booking ko bhi cancelled mark karo
+                try {
+                    const localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
+                    const updated = localBookings.map(b => String(b.id) === String(id) ? { ...b, status: 'CANCELLED' } : b);
+                    localStorage.setItem('bms_extra_bookings', JSON.stringify(updated));
+                } catch (e) {}
                 showToast('Booking cancelled successfully', 'success');
                 loadBookings();
             } catch (e) {

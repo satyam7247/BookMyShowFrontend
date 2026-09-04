@@ -675,6 +675,7 @@
                 const localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
                 localBookings.unshift({
                     id: bookingResult?.id || Date.now(),
+                    userEmail: user?.email || '',
                     movieTitle: currentShow?.movie?.title || 'Movie',
                     theaterName: currentShow?.screen?.theater?.name || 'Multiplex',
                     screenName: currentShow?.screen?.name || 'Audi 1',

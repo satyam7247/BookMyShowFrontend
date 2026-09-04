@@ -166,7 +166,8 @@ const ShowAPI = {
 };
 
 const BookingAPI = {
-    create: (data) => apiPost('/bookings', data),
+    // Fallback endpoints - /bookings fail ho to /bookings/add try karo (payment ke baad booking missing na ho)
+    create: (data) => apiPostFallback(['/bookings', '/bookings/add', '/bookings/create'], data),
     getByUser: (userId) => apiGet(`/bookings/user/${userId}`),
     getAvailableSeats: (showId) => apiGet(`/bookings/show/${showId}/available-seats`),
     cancel: (id) => apiPost(`/bookings/${id}/cancel`, {})
