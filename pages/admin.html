@@ -714,19 +714,37 @@
                 
                 allBookings = [];
                 
-                // Get bookings for each user
-                for (const user of users) {
-                    try {
-                        const userBookings = await BookingAPI.getByUser(user.id);
-                        if (Array.isArray(userBookings)) {
-                            userBookings.forEach(booking => {
-                                booking.user = user;
-                                booking.show = shows.find(s => s.id === booking.showId);
-                            });
-                            allBookings.push(...userBookings);
+                // Pehle direct saari bookings try karo (1 hi API call - fast aur reliable)
+                let loaded = false;
+                try {
+                    const all = await BookingAPI.getAll();
+                    if (Array.isArray(all)) {
+                        all.forEach(booking => {
+                            booking.user = users.find(u => String(u.id) === String(booking.userId)) || {};
+                            booking.show = shows.find(s => String(s.id) === String(booking.showId));
+                        });
+                        allBookings = all;
+                        loaded = true;
+                    }
+                } catch (e) {
+                    console.warn('Direct /bookings load failed, per-user fallback try kar rahe hain...', e);
+                }
+
+                // Fallback: har user ke liye alag se bookings lo
+                if (!loaded) {
+                    for (const user of users) {
+                        try {
+                            const userBookings = await BookingAPI.getByUser(user.id);
+                            if (Array.isArray(userBookings)) {
+                                userBookings.forEach(booking => {
+                                    booking.user = user;
+                                    booking.show = shows.find(s => String(s.id) === String(booking.showId));
+                                });
+                                allBookings.push(...userBookings);
+                            }
+                        } catch (e) {
+                            console.warn(`Could not load bookings for user ${user.id}`, e);
                         }
-                    } catch (e) {
-                        console.warn(`Could not load bookings for user ${user.id}`, e);
                     }
                 }
 
