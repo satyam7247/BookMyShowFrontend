@@ -29,9 +29,20 @@
         <div id="bookings-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
     </div>
 
+    <div id="ticket-modal" class="modal-overlay" role="dialog" aria-modal="true"
+         aria-labelledby="ticket-modal-title" tabindex="-1">
+        <div class="modal" style="max-width:560px;">
+            <button type="button" class="modal-close" data-close-ticket aria-label="Close ticket">&times;</button>
+            <div id="ticket-modal-content"></div>
+        </div>
+    </div>
+
     <script src="../js/api.js"></script>
     <script src="../js/utils.js"></script>
     <script>
+        let currentBookings = [];
+        let ticketReturnFocus = null;
+
         function getBookingSeatText(seatData) {
             if (!seatData) return 'N/A';
             if (Array.isArray(seatData)) {
@@ -40,9 +51,11 @@
             return seatData.seatNumber || seatData.seat || `${seatData.row || ''}${seatData.col || ''}` || 'N/A';
         }
 
-            function formatBookingCard(booking) {
-                const bookingId = Number(booking.id);
-                if (!Number.isSafeInteger(bookingId) || bookingId <= 0) return '';
+        function formatBookingCard(booking) {
+            const bookingId = Number(booking.id);
+            if (!Number.isSafeInteger(bookingId) || bookingId <= 0) return '';
+            const status = String(booking.status || '').toUpperCase();
+            const canDownloadTicket = status === 'CONFIRMED';
             const seats = getBookingSeatText(booking.seats || booking.seatNumbers || booking.ticketSeats);
             const foodText = Array.isArray(booking.foodItems) && booking.foodItems.length
                 ? booking.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ')
@@ -95,6 +108,13 @@
                             <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--success); margin-bottom: 1.25rem; text-shadow: 0 0 20px var(--success-glow);">₹${escapeHtml(booking.totalPrice || 0)}</div>
 
                             <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                                ${canDownloadTicket ? `
+                                <button class="btn btn-sm btn-primary" data-view-ticket="${bookingId}" style="width: 100%; font-weight: 700;">
+                                    <i class="fa-solid fa-ticket"></i> View Ticket
+                                </button>
+                                <button class="btn btn-sm btn-outline" data-download-ticket="${bookingId}" style="border-color: var(--accent); color: var(--accent); width: 100%; font-weight: 700;">
+                                    <i class="fa-solid fa-download"></i> Download Ticket
+                                </button>` : ''}
                                 <button class="btn btn-sm btn-outline" data-cancel-booking="${bookingId}" style="border-color: var(--danger); color: var(--danger); width: 100%; font-weight: 700;">
                                     <i class="fa-solid fa-trash-can"></i> Cancel Ticket
                                 </button>
@@ -106,8 +126,175 @@
             `;
         }
 
+        function getBookingById(id) {
+            return currentBookings.find(booking => String(booking.id) === String(id));
+        }
+
+        function getTicketData(booking) {
+            const food = Array.isArray(booking.foodItems) && booking.foodItems.length
+                ? booking.foodItems.map(item => `${item.name || item.foodName || 'Food'} x${item.quantity || 1}`).join(', ')
+                : (booking.food || 'No snacks added');
+            return {
+                id: Number(booking.id),
+                title: booking.show?.movie?.title || booking.movieTitle || 'Movie',
+                theater: booking.show?.screen?.theater?.name || booking.theaterName || 'Cinema Hall',
+                screen: booking.show?.screen?.name || booking.screenName || 'Screen',
+                date: booking.show?.showDate || booking.showDate || 'N/A',
+                time: booking.show?.startTime || booking.startTime || 'N/A',
+                seats: getBookingSeatText(booking.seats || booking.seatNumbers || booking.ticketSeats),
+                food,
+                price: booking.totalPrice ?? 0
+            };
+        }
+
+        function viewTicket(id, trigger) {
+            const booking = getBookingById(id);
+            if (!booking || String(booking.status || '').toUpperCase() !== 'CONFIRMED') {
+                showToast('A confirmed ticket could not be found.', 'error');
+                return;
+            }
+
+            const ticket = getTicketData(booking);
+            const content = document.getElementById('ticket-modal-content');
+            ticketReturnFocus = trigger || document.activeElement;
+            content.innerHTML = `
+                <div style="padding:0.25rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem; margin:-0.25rem -0.25rem 1rem; border-radius:var(--radius-md); background:linear-gradient(135deg,var(--primary),#be123c);">
+                        <strong id="ticket-modal-title" style="font-family:'Outfit',sans-serif; font-size:1.2rem;">BookMyShow Ticket</strong>
+                        <span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">CONFIRMED</span>
+                    </div>
+                    <h2 style="font-family:'Outfit',sans-serif; margin-bottom:1rem;">${escapeHtml(ticket.title)}</h2>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.9rem;">
+                        <div><small>Theater</small><div>${escapeHtml(ticket.theater)}</div></div>
+                        <div><small>Screen</small><div>${escapeHtml(ticket.screen)}</div></div>
+                        <div><small>Date</small><div>${escapeHtml(ticket.date)}</div></div>
+                        <div><small>Time</small><div>${escapeHtml(ticket.time)}</div></div>
+                        <div style="grid-column:1/-1;"><small>Seats</small><div>${escapeHtml(ticket.seats)}</div></div>
+                        <div style="grid-column:1/-1;"><small>Snacks</small><div>${escapeHtml(ticket.food)}</div></div>
+                    </div>
+                    <div style="border-top:1px dashed var(--border-card); margin:1rem 0; padding-top:1rem; display:flex; justify-content:space-between; gap:1rem;">
+                        <strong>Total paid: ₹${escapeHtml(ticket.price)}</strong>
+                        <strong>Booking #${ticket.id}</strong>
+                    </div>
+                    <div style="display:flex; gap:0.75rem;">
+                        <button type="button" class="btn btn-primary" data-modal-download-ticket="${ticket.id}" style="flex:1;">
+                            <i class="fa-solid fa-download"></i> Download Ticket
+                        </button>
+                        <button type="button" class="btn btn-outline" data-close-ticket style="flex:1;">Close</button>
+                    </div>
+                </div>`;
+            openModal('ticket-modal');
+            document.querySelector('#ticket-modal [data-close-ticket]')?.focus();
+        }
+
+        function closeTicketModal() {
+            closeModal('ticket-modal');
+            ticketReturnFocus?.focus?.();
+            ticketReturnFocus = null;
+        }
+
+        function drawTicketText(context, value, x, y, maxWidth) {
+            let text = String(value ?? 'N/A').slice(0, 500);
+            if (String(value ?? '').length > 500) text += '…';
+            while (text.length > 1 && context.measureText(text).width > maxWidth) {
+                text = `${text.slice(0, -2)}…`;
+            }
+            context.fillText(text, x, y);
+        }
+
+        function downloadTicket(id) {
+            const booking = getBookingById(id);
+            if (!booking || String(booking.status || '').toUpperCase() !== 'CONFIRMED') {
+                showToast('A confirmed ticket could not be found.', 'error');
+                return;
+            }
+
+            const ticket = getTicketData(booking);
+            const canvas = document.createElement('canvas');
+            canvas.width = 900;
+            canvas.height = 640;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                showToast('Could not create the ticket image in this browser.', 'error');
+                return;
+            }
+
+            context.fillStyle = '#0f1219';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            const header = context.createLinearGradient(0, 0, canvas.width, 0);
+            header.addColorStop(0, '#e11d48');
+            header.addColorStop(1, '#be123c');
+            context.fillStyle = header;
+            context.fillRect(0, 0, canvas.width, 88);
+
+            context.textBaseline = 'middle';
+            context.fillStyle = '#fff';
+            context.font = '800 30px Arial, sans-serif';
+            context.fillText('BookMyShow', 30, 44);
+            context.textAlign = 'right';
+            context.font = '700 17px Arial, sans-serif';
+            context.fillText('CONFIRMED TICKET', canvas.width - 30, 44);
+            context.textAlign = 'left';
+
+            context.font = '800 34px Arial, sans-serif';
+            drawTicketText(context, ticket.title, 30, 135, canvas.width - 60);
+            const rows = [
+                ['THEATER', ticket.theater],
+                ['SCREEN', ticket.screen],
+                ['DATE & TIME', `${ticket.date}  |  ${ticket.time}`],
+                ['SEATS', ticket.seats],
+                ['SNACKS', ticket.food]
+            ];
+            let y = 178;
+            for (const [label, value] of rows) {
+                context.fillStyle = '#8b93a7';
+                context.font = '700 13px Arial, sans-serif';
+                context.fillText(label, 30, y);
+                context.fillStyle = '#e5e7eb';
+                context.font = '700 19px Arial, sans-serif';
+                drawTicketText(context, value, 30, y + 23, canvas.width - 60);
+                y += 49;
+            }
+
+            context.strokeStyle = 'rgba(255,255,255,0.25)';
+            context.setLineDash([8, 8]);
+            context.beginPath();
+            context.moveTo(30, 430);
+            context.lineTo(canvas.width - 30, 430);
+            context.stroke();
+            context.setLineDash([]);
+
+            context.fillStyle = '#8b93a7';
+            context.font = '700 13px Arial, sans-serif';
+            context.fillText('TOTAL PAID', 30, 466);
+            context.textAlign = 'right';
+            context.fillText('BOOKING ID', canvas.width - 30, 466);
+            context.fillStyle = '#34d399';
+            context.font = '800 32px Arial, sans-serif';
+            context.textAlign = 'left';
+            context.fillText(`₹${ticket.price}`, 30, 505);
+            context.fillStyle = '#e5e7eb';
+            context.textAlign = 'right';
+            context.fillText(`#${ticket.id}`, canvas.width - 30, 505);
+            context.textAlign = 'left';
+
+            try {
+                const link = document.createElement('a');
+                const safeTitle = String(ticket.title).replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').slice(0, 60) || 'movie';
+                link.download = `ticket-${ticket.id}-${safeTitle}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                showToast('Ticket downloaded.', 'success');
+            } catch (error) {
+                console.error('Ticket download failed:', error);
+                showToast('Ticket download failed. Please try again.', 'error');
+            }
+        }
 
         async function loadBookings() {
+            currentBookings = [];
             const user = getLoggedInUser();
             if (!user) {
                 document.getElementById('bookings-list').innerHTML = `
@@ -127,21 +314,41 @@
             showLoading('bookings-list');
             try {
                 const bookings = await BookingAPI.getByUser(user.id);
-                const visible = (bookings || []).filter(b => String(b.status || '').toUpperCase() !== 'CANCELLED');
+                if (!Array.isArray(bookings)) throw new Error('Booking history response is invalid.');
+                const visible = bookings
+                    .filter(booking => String(booking.status || '').toUpperCase() !== 'CANCELLED')
+                    .sort((a, b) => new Date(b.bookedAt || 0) - new Date(a.bookedAt || 0));
 
                 if (!visible.length) {
                     showEmpty('bookings-list', 'No bookings yet. Go book some movies!');
                     return;
                 }
 
+                currentBookings = visible;
                 document.getElementById('bookings-list').innerHTML = visible.map(formatBookingCard).join('');
-                document.querySelectorAll('[data-cancel-booking]').forEach(button => {
-                    button.addEventListener('click', () => cancelBooking(button.dataset.cancelBooking));
-                });
             } catch (e) {
                 showEmpty('bookings-list', 'Could not load your ticket history.');
             }
         }
+
+        document.getElementById('bookings-list').addEventListener('click', event => {
+            const button = event.target.closest('button');
+            if (!button) return;
+            if (button.hasAttribute('data-view-ticket')) viewTicket(button.dataset.viewTicket, button);
+            if (button.hasAttribute('data-download-ticket')) downloadTicket(button.dataset.downloadTicket);
+            if (button.hasAttribute('data-cancel-booking')) cancelBooking(button.dataset.cancelBooking);
+        });
+
+        document.getElementById('ticket-modal').addEventListener('click', event => {
+            if (event.target.id === 'ticket-modal' || event.target.closest('[data-close-ticket]')) closeTicketModal();
+            const downloadButton = event.target.closest('[data-modal-download-ticket]');
+            if (downloadButton) downloadTicket(downloadButton.dataset.modalDownloadTicket);
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && document.getElementById('ticket-modal').classList.contains('active')) {
+                closeTicketModal();
+            }
+        });
 
         async function cancelBooking(id) {
             if (!confirm('Cancel this booking? If it is paid and the show has not started, a full refund will be requested.')) return;
