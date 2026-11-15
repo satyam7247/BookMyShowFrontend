@@ -87,6 +87,7 @@
                         </div>
                     </div>
                     <div>
+                        <button class="btn btn-outline btn-lg" type="button" onclick="openProfileModal()">My Profile</button>
                         <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
                     </div>
                 </div>
@@ -193,6 +194,192 @@
                 showEmpty('dashboard-movies', 'Could not load movies');
             }
         });
+    </script>
+    <div class="modal-overlay" id="profile-modal" aria-hidden="true">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+            <button class="modal-close" type="button" onclick="closeProfileModal()" aria-label="Close profile">&times;</button>
+            <h2 id="profile-modal-title" style="font-family:'Outfit',sans-serif; color:#fff; margin-bottom:1.25rem;">My Profile</h2>
+            <div id="profile-view">
+                <div class="profile-detail"><strong>Name</strong><span id="profile-name"></span></div>
+                <div class="profile-detail"><strong>Email</strong><span id="profile-email"></span></div>
+                <div class="profile-detail"><strong>Phone</strong><span id="profile-phone"></span></div>
+                <div class="profile-detail"><strong>City / Location</strong><span id="profile-city"></span></div>
+                <p class="profile-location-notice">Use “Detect my city” to request browser location permission. Your coordinates are sent to BigDataCloud only for approximate city lookup; the city is saved to your account only when you choose Save.</p>
+                <div class="profile-actions">
+                    <button class="btn btn-outline" id="detect-profile-city" type="button">Detect my city</button>
+                    <button class="btn btn-primary" id="edit-profile" type="button">Edit profile</button>
+                </div>
+                <p id="profile-location-status" class="profile-location-status" aria-live="polite"></p>
+            </div>
+            <form id="profile-form" style="display:none;" onsubmit="saveProfileChanges(event)">
+                <div class="form-group">
+                    <label for="profile-edit-name">Name</label>
+                    <input id="profile-edit-name" name="name" type="text" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-edit-email">Email</label>
+                    <input id="profile-edit-email" name="email" type="email" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="profile-edit-phone">Phone</label>
+                    <input id="profile-edit-phone" name="phone" type="tel" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label for="profile-edit-city">City / Location</label>
+                    <input id="profile-edit-city" name="city" type="text" maxlength="120" placeholder="Enter your city">
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-outline" id="cancel-profile-edit" type="button">Cancel</button>
+                    <button class="btn btn-primary" id="save-profile" type="submit">Save changes</button>
+                </div>
+            </form>
+        </section>
+    </div>
+    <script>
+        function renderProfile(profile) {
+            document.getElementById('profile-name').textContent = profile.name || 'Not provided';
+            document.getElementById('profile-email').textContent = profile.email || 'Not provided';
+            document.getElementById('profile-phone').textContent = profile.phone || 'Not provided';
+            document.getElementById('profile-city').textContent = profile.city || 'Not added';
+            document.getElementById('profile-edit-name').value = profile.name || '';
+            document.getElementById('profile-edit-email').value = profile.email || '';
+            document.getElementById('profile-edit-phone').value = profile.phone || '';
+            document.getElementById('profile-edit-city').value = profile.city || '';
+        }
+
+        async function openProfileModal() {
+            const user = getLoggedInUser();
+            if (!user) {
+                showToast('Please login to view your profile.', 'error');
+                return;
+            }
+            renderProfile(user);
+            document.getElementById('profile-view').style.display = '';
+            document.getElementById('profile-form').style.display = 'none';
+            document.getElementById('profile-location-status').textContent = '';
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+
+            try {
+                const profile = await UserAPI.getById(user.id);
+                if (!profile || typeof profile !== 'object') throw new Error('Profile response is invalid.');
+                setLoggedInUser({ ...user, ...profile });
+                renderProfile({ ...user, ...profile });
+            } catch (error) {
+                showToast(`Could not refresh profile. Showing saved account details. ${error.message || ''}`.trim(), 'error');
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        function setProfileEditMode(isEditing) {
+            document.getElementById('profile-view').style.display = isEditing ? 'none' : '';
+            document.getElementById('profile-form').style.display = isEditing ? '' : 'none';
+        }
+
+        async function saveProfileChanges(event) {
+            event.preventDefault();
+            const user = getLoggedInUser();
+            if (!user) {
+                showToast('Please login again to update your profile.', 'error');
+                return;
+            }
+            const saveButton = document.getElementById('save-profile');
+            const data = {
+                name: document.getElementById('profile-edit-name').value.trim(),
+                phone: document.getElementById('profile-edit-phone').value.trim(),
+                city: document.getElementById('profile-edit-city').value.trim()
+            };
+            if (!data.name) {
+                showToast('Name is required.', 'error');
+                return;
+            }
+
+            saveButton.disabled = true;
+            try {
+                const updated = await UserAPI.update(user.id, data);
+                if (!updated || typeof updated !== 'object') throw new Error('The server returned an invalid profile.');
+                setLoggedInUser({ ...user, ...updated });
+                renderProfile({ ...user, ...updated });
+                setProfileEditMode(false);
+                showToast('Profile updated successfully.', 'success');
+            } catch (error) {
+                showToast(error.message || 'Could not update your profile.', 'error');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }
+
+        async function detectProfileCity() {
+            const status = document.getElementById('profile-location-status');
+            const button = document.getElementById('detect-profile-city');
+            if (!navigator.geolocation) {
+                status.textContent = 'This browser does not support location detection. Enter your city manually.';
+                return;
+            }
+            button.disabled = true;
+            status.textContent = 'Waiting for browser location permission…';
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    });
+                });
+                const query = new URLSearchParams({
+                    latitude: String(position.coords.latitude),
+                    longitude: String(position.coords.longitude),
+                    localityLanguage: 'en'
+                });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                let response;
+                try {
+                    response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?${query}`, {
+                        signal: controller.signal
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+                if (!response.ok) throw new Error('City lookup service is unavailable.');
+                const result = await response.json();
+                const city = result.city || result.locality || result.principalSubdivision;
+                if (typeof city !== 'string' || !city.trim()) {
+                    throw new Error('Could not determine a city. Please enter it manually.');
+                }
+                document.getElementById('profile-edit-city').value = city.trim();
+                status.textContent = `Approximate city detected: ${city.trim()}. Save your profile to keep it.`;
+                setProfileEditMode(true);
+            } catch (error) {
+                status.textContent = error && error.code === 1
+                    ? 'Location permission was denied. You can enter your city manually.'
+                    : error.message || 'Could not detect your city. Enter it manually.';
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        document.getElementById('edit-profile').addEventListener('click', () => setProfileEditMode(true));
+        document.getElementById('cancel-profile-edit').addEventListener('click', () => {
+            renderProfile(getLoggedInUser() || {});
+            setProfileEditMode(false);
+        });
+        document.getElementById('detect-profile-city').addEventListener('click', detectProfileCity);
+        document.getElementById('profile-modal').addEventListener('click', event => {
+            if (event.target.id === 'profile-modal') closeProfileModal();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeProfileModal();
+        });
+        if (window.location.hash === '#profile') openProfileModal();
     </script>
 </body>
 </html>

@@ -204,5 +204,6 @@ const UserAPI = {
     login: (data) => apiPost('/users/login', data),
     register: (data) => apiPost('/users/register', data),
     getById: (id) => apiGet(`/users/${id}`),
+    update: (id, data) => apiPut(`/users/${id}`, data),
     logout: () => apiPost('/users/logout', {})
 };

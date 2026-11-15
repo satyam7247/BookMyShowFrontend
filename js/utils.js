@@ -79,7 +79,7 @@ function updateNavUser() {
     const safeName = escapeHtml(user?.name || 'User');
     const safeRole = escapeHtml(user?.role || '');
     const adminLink = userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-sm btn-primary">Admin Panel</a>` : '';
-    const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-sm btn-outline">Dashboard</a>` : '';
+    const profileLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-sm btn-outline">My Profile</a>` : '';
     
     if (user) {
         const roleLabel = user.role ? `<span class="role-tag">${safeRole}</span>` : '';
@@ -89,7 +89,7 @@ function updateNavUser() {
                 ${roleLabel}
             </div>
             ${adminLink}
-            ${dashboardLink}
+            ${profileLink}
             <button class="btn btn-sm btn-outline nav-logout" onclick="logout()">Logout</button>
         `;
         navUser.innerHTML = userHtml;
@@ -104,7 +104,7 @@ function updateNavUser() {
                     ${roleLabel}
                 </div>
                 ${userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-primary btn-block">Admin Panel</a>` : ''}
-                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-outline btn-block">Dashboard</a>` : ''}
+                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-outline btn-block">My Profile</a>` : ''}
                 <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
             `;
             navLinks.appendChild(mobileSection);
