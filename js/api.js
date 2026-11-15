@@ -1,5 +1,6 @@
 // ===== API BASE URL =====
 const DEFAULT_API = 'https://my-springboot-backend-bookmyshow-1.onrender.com/api';
+const API_TIMEOUT_MS = 60000;
 
 function resolveApiBase() {
     const configuredBase =
@@ -18,49 +19,81 @@ function resolveApiBase() {
 
 const API = resolveApiBase();
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const headers = new Headers(options.headers || {});
+    let accessToken = null;
+    try {
+        accessToken = localStorage.getItem('bms_access_token');
+    } catch {
+        accessToken = null;
+    }
+    if (accessToken && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+
+    try {
+        return await fetch(url, { ...options, headers, signal: controller.signal });
+    } catch (error) {
+        if (error && error.name === 'AbortError') {
+            throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s. The backend may be offline or starting up.`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function parseApiError(res, rawBody, fallbackText) {
+    if (!res || typeof res.ok === 'boolean' && !res.ok) {
+        const statusText = res && res.statusText ? res.statusText : 'Request failed';
+        if (rawBody) {
+            try {
+                const errJson = JSON.parse(rawBody);
+                const msg = errJson.message || errJson.error || errJson.errorMessage || errJson.Message || JSON.stringify(errJson);
+                if (msg) return new Error(msg);
+            } catch {
+                // Fall through to raw text below.
+            }
+            if (rawBody.trim()) return new Error(rawBody.trim());
+        }
+        return new Error(fallbackText || statusText || 'Request failed');
+    }
+    return null;
+}
+
 // ===== GENERIC FETCH HELPERS =====
 async function apiGet(endpoint) {
-    const res = await fetch(`${API}${endpoint}`);
-    if (!res.ok) {
-        let errText = await res.text().catch(() => res.statusText);
-        try {
-            const errJson = JSON.parse(errText);
-            const msg = errJson.message || errJson.error || errJson.errorMessage || JSON.stringify(errJson);
-            throw new Error(msg || res.statusText || 'Request failed');
-        } catch {
-            throw new Error(errText || res.statusText || 'Request failed');
-        }
+    const url = `${API}${endpoint}`;
+    const res = await fetchWithTimeout(url);
+    const rawBody = await res.text().catch(() => '');
+    const parsedError = parseApiError(res, rawBody, 'Request failed');
+    if (parsedError) throw parsedError;
+    if (!rawBody) return null;
+    try {
+        return JSON.parse(rawBody);
+    } catch {
+        return rawBody;
     }
-    return res.json();
 }
 
 async function apiPost(endpoint, data) {
-    const res = await fetch(`${API}${endpoint}`, {
+    const url = `${API}${endpoint}`;
+    const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) {
-        const rawBody = await res.text().catch(() => '');
-        try {
-            const errBody = rawBody ? JSON.parse(rawBody) : {};
-            console.error('API error', endpoint, res.status, errBody);
-            let msg = errBody.message || errBody.Message || errBody['Message '] || errBody.error;
-            if (!msg) {
-                const vals = Object.values(errBody || {});
-                msg = vals.find(v => typeof v === 'string');
-            }
-            if (!msg) msg = JSON.stringify(errBody) || res.statusText;
-            throw new Error(msg);
-        } catch (err) {
-            if (err instanceof SyntaxError) {
-                console.error('API error (non-json)', endpoint, res.status, rawBody);
-                throw new Error(rawBody || res.statusText || 'Request failed');
-            }
-            throw err;
-        }
+    const rawBody = await res.text().catch(() => '');
+    const parsedError = parseApiError(res, rawBody, 'Request failed');
+    if (parsedError) throw parsedError;
+    if (!rawBody) return null;
+    try {
+        return JSON.parse(rawBody);
+    } catch {
+        return rawBody;
     }
-    return res.json();
 }
 
 async function apiPostFallback(endpoints, data) {
@@ -76,16 +109,21 @@ async function apiPostFallback(endpoints, data) {
 }
 
 async function apiPut(endpoint, data) {
-    const res = await fetch(`${API}${endpoint}`, {
+    const url = `${API}${endpoint}`;
+    const res = await fetchWithTimeout(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) {
-        const rawBody = await res.text().catch(() => '');
-        throw new Error(rawBody || res.statusText || 'Update failed');
+    const rawBody = await res.text().catch(() => '');
+    const parsedError = parseApiError(res, rawBody, 'Update failed');
+    if (parsedError) throw parsedError;
+    if (!rawBody) return null;
+    try {
+        return JSON.parse(rawBody);
+    } catch {
+        return rawBody;
     }
-    return res.text().then(text => text ? JSON.parse(text) : null).catch(() => null);
 }
 
 async function apiPutFallback(endpoints, data) {
@@ -101,19 +139,12 @@ async function apiPutFallback(endpoints, data) {
 }
 
 async function apiDelete(endpoint) {
-    const res = await fetch(`${API}${endpoint}`, {
-        method: 'DELETE'
-    });
-    if (!res.ok) {
-        let errText = await res.text().catch(() => res.statusText);
-        try {
-            const errJson = JSON.parse(errText);
-            throw new Error(errJson.message || errJson.error || res.statusText);
-        } catch {
-            throw new Error(errText || res.statusText || 'Delete failed');
-        }
-    }
-    return res.text();
+    const url = `${API}${endpoint}`;
+    const res = await fetchWithTimeout(url, { method: 'DELETE' });
+    const rawBody = await res.text().catch(() => '');
+    const parsedError = parseApiError(res, rawBody, 'Delete failed');
+    if (parsedError) throw parsedError;
+    return rawBody;
 }
 
 // ===== API DOMAIN SERVICES =====
@@ -128,16 +159,6 @@ const MovieAPI = {
     add: (data) => apiPostFallback(['/movies', '/movies/add'], data),
     update: (id, data) => apiPutFallback([`/movies/${id}`, `/movies/update/${id}`, `/movies/${id}/update`], data),
     delete: (id) => apiDelete(`/movies/${id}`),
-    // Best-effort share count persistence; silently fails if the backend has no such endpoint
-    incrementShare: (id) => apiPost(`/movies/${id}/share`, {}),
-    // Like persistence - response me updated likeCount aata hai (pure backend, localStorage nahi)
-    incrementLike: (id) => apiPost(`/movies/${id}/like`, {}),
-    removeLike: async (id) => {
-        const res = await fetch(`${API}/movies/${id}/like`, { method: 'DELETE' });
-        const text = await res.text().catch(() => '');
-        if (!res.ok) throw new Error(text || res.statusText || 'Unlike failed');
-        return text ? JSON.parse(text) : null;
-    }
 };
 
 const TheaterAPI = {
@@ -166,8 +187,7 @@ const ShowAPI = {
 };
 
 const BookingAPI = {
-    // Fallback endpoints - /bookings fail ho to /bookings/add try karo (payment ke baad booking missing na ho)
-    create: (data) => apiPostFallback(['/bookings', '/bookings/add', '/bookings/create'], data),
+    create: (data) => apiPost('/bookings', data),
     getAll: () => apiGet('/bookings'),
     getByUser: (userId) => apiGet(`/bookings/user/${userId}`),
     getAvailableSeats: (showId) => apiGet(`/bookings/show/${showId}/available-seats`),
@@ -182,9 +202,7 @@ const PaymentAPI = {
 const UserAPI = {
     getAll: () => apiGet('/users'),
     login: (data) => apiPost('/users/login', data),
-    // Google login - backend verify karega ID token; fail hone par frontend local login fallback karega
-    googleLogin: (data) => apiPostFallback(['/users/google-login', '/users/google', '/auth/google', '/users/social-login'], data),
     register: (data) => apiPost('/users/register', data),
     getById: (id) => apiGet(`/users/${id}`),
-    update: (id, data) => apiPutFallback([`/users/${id}`, `/users/update/${id}`, `/users/${id}/update`], data)
+    logout: () => apiPost('/users/logout', {})
 };

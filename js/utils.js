@@ -1,4 +1,14 @@
 // ===== TOAST NOTIFICATIONS =====
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
 function showToast(message, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -7,25 +17,42 @@ function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = message;
+    const safeType = ['success', 'error', 'info'].includes(type) ? type : 'info';
+    toast.className = `toast toast-${safeType}`;
+    toast.textContent = message;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
 }
 
 // ===== SESSION (localStorage) =====
 function setLoggedInUser(user) {
-    localStorage.setItem('bms_user', JSON.stringify(user));
+    const { accessToken, ...profile } = user || {};
+    localStorage.setItem('bms_user', JSON.stringify(profile));
+    if (accessToken) {
+        localStorage.setItem('bms_access_token', accessToken);
+    }
     updateNavUser();
 }
 
 function getLoggedInUser() {
     const u = localStorage.getItem('bms_user');
-    return u ? JSON.parse(u) : null;
+    if (!u) return null;
+    try {
+        return JSON.parse(u);
+    } catch (error) {
+        console.warn('Stored user profile is invalid; clearing the local session.', error);
+        localStorage.removeItem('bms_user');
+        localStorage.removeItem('bms_access_token');
+        return null;
+    }
 }
 
 function logout() {
+    if (localStorage.getItem('bms_access_token') && typeof UserAPI !== 'undefined') {
+        UserAPI.logout().catch(error => console.warn('Server-side logout failed.', error));
+    }
     localStorage.removeItem('bms_user');
+    localStorage.removeItem('bms_access_token');
     updateNavUser();
     showToast('Logged out successfully', 'success');
     const homePath = window.location.pathname.includes('/pages/') ? '../index.html' : 'index.html';
@@ -49,20 +76,18 @@ function updateNavUser() {
     navLinks?.querySelector('.mobile-user-section')?.remove();
     ensureCoreNavLinks(navLinks);
     
+    const safeName = escapeHtml(user?.name || 'User');
+    const safeRole = escapeHtml(user?.role || '');
     const adminLink = userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-sm btn-primary">Admin Panel</a>` : '';
-    const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}#profile" class="btn btn-sm btn-outline" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}">My Profile</a>` : '';
+    const dashboardLink = user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-sm btn-outline">Dashboard</a>` : '';
     
     if (user) {
-        // Chhoti circular profile photo (localStorage me saved) — na ho to initial letter
-        let avatarHtml;
-        try {
-            const photo = localStorage.getItem(`bms_profile_photo_${user.id}`) || user.profilePhoto || '';
-            avatarHtml = photo
-                ? `<img src="${photo}" alt="Me" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" />`
-                : `<span style="width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem; border:2px solid var(--primary);">${(user.name || 'U').charAt(0).toUpperCase()}</span>`;
-        } catch (e) { avatarHtml = ''; }
+        const roleLabel = user.role ? `<span class="role-tag">${safeRole}</span>` : '';
         const userHtml = `
-            <a href="${getPagePath('pages/dashboard.html')}#profile" title="My Profile" onclick="if(document.getElementById('profile-modal-overlay')){openProfileModal();return false;}" style="display:inline-flex; align-items:center;">${avatarHtml}</a>
+            <div class="user-badge">
+                <span>Hi, <strong>${safeName}</strong></span>
+                ${roleLabel}
+            </div>
             ${adminLink}
             ${dashboardLink}
             <button class="btn btn-sm btn-outline nav-logout" onclick="logout()">Logout</button>
@@ -74,7 +99,12 @@ function updateNavUser() {
             const mobileSection = document.createElement('div');
             mobileSection.className = 'mobile-user-section';
             mobileSection.innerHTML = `
+                <div class="user-badge" style="margin-bottom: 1rem; justify-content: center;">
+                    <span>Hi, <strong>${safeName}</strong></span>
+                    ${roleLabel}
+                </div>
                 ${userIsAdmin() ? `<a href="${getPagePath('pages/admin.html')}" class="btn btn-primary btn-block">Admin Panel</a>` : ''}
+                ${user && !userIsAdmin() ? `<a href="${getPagePath('pages/dashboard.html')}" class="btn btn-outline btn-block">Dashboard</a>` : ''}
                 <button class="btn btn-outline btn-block" style="color: var(--primary); border-color: var(--primary);" onclick="logout()">Logout</button>
             `;
             navLinks.appendChild(mobileSection);
@@ -166,6 +196,9 @@ function normalizeSourceUrl(value) {
 
 async function readFileAsDataUrl(file) {
     if (!file) return '';
+    if (!/^image\/(?:png|jpe?g|gif|webp|avif)$/i.test(file.type || '') || file.size > 2 * 1024 * 1024) {
+        throw new Error('Choose a PNG, JPEG, GIF, WebP, or AVIF image up to 2 MB.');
+    }
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ''));
@@ -174,66 +207,27 @@ async function readFileAsDataUrl(file) {
     });
 }
 
-// Chhota helper: image ko canvas me scale karke JPEG data URL banata hai
-function drawScaledImage(img, maxSize, quality) {
-    let { width, height } = img;
-    if (width > maxSize || height > maxSize) {
-        if (width > height) { height = Math.round(height * (maxSize / width)); width = maxSize; }
-        else { width = Math.round(width * (maxSize / height)); height = maxSize; }
+function getSafeImageUrl(value) {
+    if (typeof value !== 'string') return '';
+    const source = value.trim();
+    if (/^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[a-z0-9+/=]+$/i.test(source)) {
+        return source;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-    return canvas.toDataURL('image/jpeg', quality);
-}
-
-// Image ko compress karke chhota data URL banata hai (mobile ke bade photos ke liye - bade base64 se save fail hota hai)
-async function compressImageFile(file, maxSize = 800, quality = 0.8) {
-    if (!file) return '';
-    let dataUrl = '';
     try {
-        dataUrl = await readFileAsDataUrl(file);
+        const url = new URL(source, window.location.href);
+        const isSecureRemoteUrl = url.protocol === 'https:';
+        const isSameOriginUrl = url.origin === window.location.origin
+            && (url.protocol === 'http:' || url.protocol === 'https:');
+        return isSecureRemoteUrl || isSameOriginUrl ? url.href : '';
     } catch {
-        throw new Error('Image file read nahi ho payi. Dobara try karein.');
+        return '';
     }
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            try {
-                // Pehle normal compress karo
-                let size = maxSize, q = quality;
-                let out = drawScaledImage(img, size, q);
-                // Mobile ke bade photos: agar phir bhi bada hai to progressively aur chhota karo
-                let attempts = 0;
-                while (out.length > 400000 && attempts < 4) {
-                    size = Math.round(size * 0.75);
-                    q = Math.max(0.5, q - 0.1);
-                    out = drawScaledImage(img, size, q);
-                    attempts++;
-                }
-                // Itna bada payload backend accept nahi karega — clear error do, silent fail mat karo
-                if (out.length > 700000) {
-                    reject(new Error('Image bahut badi hai. Chhoti image select karein ya Poster Image URL paste karein.'));
-                    return;
-                }
-                resolve(out);
-            } catch (err) {
-                reject(new Error('Image process nahi ho payi. Dusri image try karein.'));
-            }
-        };
-        // HEIC (iPhone photos) jaise formats mobile browser me canvas me decode nahi hote —
-        // original bhejne se request fail hoti thi, ab clear message dikhega
-        img.onerror = () => reject(new Error('Ye image format support nahi hai (iPhone HEIC photo?). JPG/PNG image use karein ya Poster Image URL paste karein.'));
-        img.src = dataUrl;
-    });
 }
 
 async function resolvePosterSource(input) {
     const source = normalizeSourceUrl(input);
     if (!source) return '';
-    // Return direct web image link instantly without blocking HTTP requests!
-    return source;
+    return getSafeImageUrl(source);
 }
 
 async function resolveMoviePosterSource(movieOrSource) {
@@ -246,13 +240,11 @@ async function resolveMoviePosterSource(movieOrSource) {
 
 // Synchronous fast poster fetcher
 async function getBestMoviePoster(movie) {
-    const raw = getMoviePoster(movie);
-    if (!raw) return '';
-    return raw;
+    return getSafeImageUrl(getMoviePoster(movie));
 }
 
 function moviePosterFallback(movie) {
-    return getMoviePoster(movie) || '';
+    return getSafeImageUrl(getMoviePoster(movie));
 }
 
 function getRowLabel(index) {
@@ -266,21 +258,25 @@ function getRowLabel(index) {
     return label || 'A';
 }
 
-// High-speed parallel seat generator for screens with missing seats
 async function ensureSeatsForScreen(screenId, totalSeats, seatType = 'REGULAR', seatsPerRow = 10) {
-    if (!screenId || !totalSeats || typeof SeatAPI === 'undefined') return [];
-
-    try {
-        const existingSeats = await SeatAPI.getByScreen(screenId);
-        if (Array.isArray(existingSeats) && existingSeats.length > 0) {
-            return existingSeats;
-        }
-    } catch {
-        // If lookup fails, attempt creation.
+    const numericScreenId = Number(screenId);
+    const requestedSeatCount = Number(totalSeats);
+    if (!Number.isSafeInteger(numericScreenId) || numericScreenId <= 0
+        || !Number.isSafeInteger(requestedSeatCount) || requestedSeatCount <= 0) {
+        throw new Error('A valid screen and positive seat count are required.');
+    }
+    if (typeof SeatAPI === 'undefined') {
+        throw new Error('Seat API is unavailable.');
     }
 
+    const existingSeats = await SeatAPI.getByScreen(numericScreenId);
+    if (!Array.isArray(existingSeats)) {
+        throw new Error('Could not verify existing seats for this screen.');
+    }
+    if (existingSeats.length > 0) return existingSeats;
+
     const seatsToCreate = [];
-    for (let i = 1; i <= Math.min(totalSeats, 60); i++) {
+    for (let i = 1; i <= requestedSeatCount; i++) {
         const rowIndex = Math.floor((i - 1) / seatsPerRow) + 1;
         const col = ((i - 1) % seatsPerRow) + 1;
         const row = getRowLabel(rowIndex);
@@ -289,21 +285,23 @@ async function ensureSeatsForScreen(screenId, totalSeats, seatType = 'REGULAR', 
             row,
             col,
             seatType,
-            screenId
+            screenId: numericScreenId
         });
     }
 
-    // Execute in parallel batches of 5 for ultra fast creation
     const createdSeats = [];
     const batchSize = 5;
     for (let i = 0; i < seatsToCreate.length; i += batchSize) {
         const batch = seatsToCreate.slice(i, i + batchSize);
-        const results = await Promise.allSettled(batch.map(s => SeatAPI.add(s)));
-        results.forEach(res => {
-            if (res.status === 'fulfilled' && res.value) {
-                createdSeats.push(res.value);
+        try {
+            const createdBatch = await Promise.all(batch.map(seat => SeatAPI.add(seat)));
+            if (createdBatch.some(seat => !seat || !Number.isSafeInteger(Number(seat.id)))) {
+                throw new Error('The server returned an invalid seat record.');
             }
-        });
+            createdSeats.push(...createdBatch);
+        } catch (error) {
+            throw new Error(`Seat creation was incomplete; some seats may already exist. Reload the screen and verify before retrying. ${error.message}`);
+        }
     }
 
     return createdSeats;
@@ -340,10 +338,11 @@ function showEmpty(containerId, message = 'No data found') {
         el.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-card); animation: fadeIn 0.4s ease;">
                 <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--primary-glow));"><i class="fa-solid fa-clapperboard" style="color:var(--primary);"></i></div>
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.5rem;">${message}</h3>
+                <h3 class="empty-state-message" style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.5rem;"></h3>
                 <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 460px; margin: 0 auto 1.5rem;">No records found. You can add new entries from the Admin Panel.</p>
             </div>
         `;
+        el.querySelector('.empty-state-message').textContent = message;
     }
 }
 
@@ -401,7 +400,6 @@ document.addEventListener('click', (e) => {
 
 // ===== SHARE FUNCTIONALITY =====
 let currentSharingMovie = null;
-let shareCountedInThisModal = false;
 
 // Registry so movie data can be passed to openShareModal safely (no quoting issues in inline HTML)
 const shareMovieRegistry = {};
@@ -417,10 +415,6 @@ function buildMovieUrl(movie) {
     return `${window.location.origin}${inPages ? '' : '/pages'}/movie-detail.html?id=${encodeURIComponent(movie.id)}`;
 }
 
-function getShareCountText(movieId) {
-    return `${getShareCount(movieId)} shares`;
-}
-
 async function openShareModal(movieJsonOrKey) {
     try {
         let movie;
@@ -430,7 +424,6 @@ async function openShareModal(movieJsonOrKey) {
             movie = JSON.parse(decodeURIComponent(movieJsonOrKey));
         }
         currentSharingMovie = movie;
-        shareCountedInThisModal = false; // one count per modal open, prevents duplicates from a single click
 
         const movieUrl = buildMovieUrl(movie);
         const safeTitle = String(movie.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -490,14 +483,6 @@ async function openShareModal(movieJsonOrKey) {
     }
 }
 
-function countShareOnce() {
-    if (shareCountedInThisModal || !currentSharingMovie) return;
-    shareCountedInThisModal = true;
-    incrementShareCount(currentSharingMovie.id);
-    const tag = document.querySelector('#share-modal-content .share-count-tag');
-    if (tag) tag.innerHTML = `<i class="fa-solid fa-share-nodes"></i> ${getShareCountText(currentSharingMovie.id)}`;
-}
-
 function shareToWhatsApp() {
     if (!currentSharingMovie) return;
     const movie = currentSharingMovie;
@@ -505,8 +490,7 @@ function shareToWhatsApp() {
     // wa.me works on mobile (opens WhatsApp app with contact/group chooser) and on desktop (WhatsApp Web)
     const waUrl = `https://wa.me/?text=${encodeURIComponent(`🎬 Check out this movie: ${movie.title}\nBook your tickets here: ${movieUrl}`)}`;
 
-    window.open(waUrl, '_blank');
-    countShareOnce();
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
     closeModal('share-modal');
 }
 
@@ -517,7 +501,6 @@ function copyMovieLink() {
 
     const done = () => {
         showToast('Link copied to clipboard!', 'success');
-        countShareOnce();
         closeModal('share-modal');
     };
 
@@ -555,181 +538,11 @@ async function nativeShare() {
             text: `🎬 Check out this movie: ${movie.title}`,
             url: movieUrl
         });
-        countShareOnce();
         closeModal('share-modal');
     } catch (e) {
         console.log('Native share failed or cancelled');
     }
 }
-
-function incrementShareCount(movieId) {
-    // Local persistence (used when backend share endpoint is unavailable)
-    const shares = JSON.parse(localStorage.getItem('bms_movie_shares') || '{}');
-    shares[movieId] = (shares[movieId] || 0) + 1;
-    localStorage.setItem('bms_movie_shares', JSON.stringify(shares));
-
-    // Best-effort backend persistence; silently ignored if the endpoint doesn't exist
-    if (typeof MovieAPI !== 'undefined' && MovieAPI.incrementShare) {
-        MovieAPI.incrementShare(movieId).catch(() => {});
-    }
-
-    // Refresh grids if visible
-    if (typeof renderMovies === 'function' && typeof visibleMovies !== 'undefined') {
-        renderMovies(visibleMovies);
-    }
-}
-
-// ===== MOVIE LIKES (pure backend - localStorage use nahi hota) =====
-const likedByUserSession = new Set(); // sirf current page session ke liye (refresh par reset)
-
-// Heart icon SVG (Material Symbols style) — used everywhere for likes
-function heartIconSVG() {
-    return '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-120 352-234q-72-65-123.5-116t-85-96q-33.5-45-49-87T79-621q0-94 63-156.5T299-840q52 0 99 22t82 62q35-40 82-62t99-22q94 0 157 62.5T881-621q0 46-15.5 88t-49 87q-33.5 45-85 96T608-234L480-120ZM171-560h618q6-16 9-31t3-30q0-60-41.5-99.5T661-760q-47 0-86.5 27.5T504-660h-48q-31-45-70.5-72.5T299-760q-57 0-98.5 39.5T159-621q0 15 3 30t9 31Zm102 140h414q16-17 29-31.5t24-28.5H220q11 14 24 28.5t29 31.5Zm207 192q36-32 67.5-59.5T605-340H355q26 25 57.5 52.5T480-228Zm0-332Z"/></svg>';
-}
-
-// Like count label: 0 -> empty, 1 -> "1 Like", n -> "n Likes"
-function likeCountLabel(count) {
-    if (!count || count <= 0) return '';
-    return count === 1 ? '1 Like' : `${count} Likes`;
-}
-
-// Count sirf backend se - movie object ka likeCount field
-function getMovieLikeCount(movie) {
-    return Number(movie?.likeCount ?? movie?.likes ?? movie?.like ?? 0) || 0;
-}
-
-function isMovieLikedByUser(movieId) {
-    return likedByUserSession.has(String(movieId));
-}
-
-// Like/unlike: seedha backend call, response me updated likeCount aata hai
-async function toggleMovieLike(event, movieId) {
-    if (event) { event.preventDefault(); event.stopPropagation(); }
-    const id = String(movieId);
-    const alreadyLiked = likedByUserSession.has(id);
-
-    // UI turant update karo (optimistic)
-    if (alreadyLiked) likedByUserSession.delete(id);
-    else likedByUserSession.add(id);
-
-    const btn = document.querySelector(`.btn-like[data-movie-id="${id}"]`);
-    btn?.classList.toggle('liked', !alreadyLiked);
-
-    try {
-        const updated = alreadyLiked
-            ? await MovieAPI.removeLike(id)
-            : await MovieAPI.incrementLike(id);
-
-        // Backend se total count lo, UI update karo
-        const total = Number(updated?.likeCount ?? updated?.data?.likeCount);
-        const countEl = btn?.querySelector('.like-count');
-        if (countEl) countEl.textContent = likeCountLabel(Number.isFinite(total) ? total : null);
-    } catch (err) {
-        // Backend fail -> state wapas roll back karo
-        if (alreadyLiked) likedByUserSession.add(id);
-        else likedByUserSession.delete(id);
-        btn?.classList.toggle('liked', alreadyLiked);
-        if (typeof showToast === 'function') showToast('Like save nahi hua - thodi der baad try karo', 'error');
-    }
-}
-
-function getShareCount(movieId) {
-    const shares = JSON.parse(localStorage.getItem('bms_movie_shares') || '{}');
-    return shares[movieId] || 0;
-}
-
-// ===== CUSTOM CURSOR RING POINTER =====
-// Gola ring jo mouse ke peeche smoothly follow karta hai (pure website par)
-// Mobile par: touch/tap karne par ring us jagah dikhti hai aur thodi der baad fade out
-(function initCursorRing() {
-    const ring = document.createElement('div');
-    ring.className = 'cursor-ring';
-    const dot = document.createElement('div');
-    dot.className = 'cursor-ring-dot';
-    document.body.appendChild(ring);
-    document.body.appendChild(dot);
-
-    let mouseX = -100, mouseY = -100;   // actual mouse position
-    let ringX = -100, ringY = -100;     // ring ka current (lerped) position
-    let visible = false;
-    const isTouchOnly = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
-    let touchHideTimer = null;
-
-    function showAt(x, y) {
-        mouseX = x; mouseY = y;
-        ringX = x; ringY = y;
-        visible = true;
-        ring.style.opacity = '1';
-        dot.style.opacity = '1';
-    }
-
-    if (isTouchOnly) {
-        // ===== MOBILE / TOUCH: tap karne par ring dikhao, ~600ms baad fade out =====
-        document.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            if (!t) return;
-            if (touchHideTimer) clearTimeout(touchHideTimer);
-            showAt(t.clientX, t.clientY);
-            // Clickable par touch - ring white
-            const target = e.target;
-            const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
-            ring.classList.toggle('cursor-ring-hover', !!interactive);
-            dot.classList.toggle('cursor-ring-hover', !!interactive);
-        }, { passive: true });
-
-        document.addEventListener('touchmove', (e) => {
-            // Scroll/drag ke dauran ring finger ke saath chalti hai
-            const t = e.touches[0];
-            if (!t) return;
-            showAt(t.clientX, t.clientY);
-        }, { passive: true });
-
-        document.addEventListener('touchend', () => {
-            // Thodi der baad ring gayab
-            touchHideTimer = setTimeout(() => {
-                visible = false;
-                ring.style.opacity = '0';
-                dot.style.opacity = '0';
-            }, 600);
-        }, { passive: true });
-
-        // Touch mode me mouse-follow animation ki zaroorat nahi (position direct set hoti hai)
-        return;
-    }
-
-    // ===== DESKTOP: ring mouse ke peeche smoothly follow karti hai =====
-    document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        if (!visible) {
-            visible = true;
-            ring.style.opacity = '1';
-            dot.style.opacity = '1';
-            // First appearance par ring ko jump na karaye
-            ringX = mouseX; ringY = mouseY;
-        }
-        // Clickable element (link/button/input) par hover - ring white ho jaata hai (size same rehta hai)
-        const target = e.target;
-        const interactive = target.closest && target.closest('a, button, .btn, input, select, textarea, label, .btn-like, .city-chip, .movie-item, .seat, [onclick], [role="button"], .cursor-pointer');
-        ring.classList.toggle('cursor-ring-hover', !!interactive);
-        dot.classList.toggle('cursor-ring-hover', !!interactive);
-    }, { passive: true });
-
-    document.addEventListener('mouseleave', () => {
-        visible = false;
-        ring.style.opacity = '0';
-        dot.style.opacity = '0';
-    });
-
-    // Smooth follow: har frame par ring mouse ki taraf thoda-thoda move karta hai
-    (function animateRing() {
-        ringX += (mouseX - ringX) * 0.18;
-        ringY += (mouseY - ringY) * 0.18;
-        ring.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
-        dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
-        requestAnimationFrame(animateRing);
-    })();
-})();
 
 // ===== ON LOAD =====
 document.addEventListener('DOMContentLoaded', () => {

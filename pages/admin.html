@@ -329,8 +329,8 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=2"></script>
-    <script src="../js/utils.js?v=2"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const user = getLoggedInUser();
@@ -359,16 +359,25 @@
                 if (statEl) statEl.textContent = cities ? cities.length : 0;
 
                 let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>City Name</th><th>State</th></tr></thead><tbody>';
-                cities.forEach(c => html += `<tr><td>#${c.id}</td><td><strong>${c.name}</strong></td><td>${c.state || 'N/A'}</td></tr>`);
+                cities.forEach(c => {
+                    const id = Number(c.id);
+                    if (!Number.isSafeInteger(id) || id <= 0) return;
+                    html += `<tr><td>#${id}</td><td><strong>${escapeHtml(c.name || 'Unnamed city')}</strong></td><td>${escapeHtml(c.state || 'N/A')}</td></tr>`;
+                });
                 html += '</tbody></table></div>';
                 document.getElementById('cities-table').innerHTML = cities.length ? html : '<div class="empty-state"><p>No cities added yet</p></div>';
 
                 const theaterCity = document.getElementById('theater-city');
                 if (theaterCity) {
-                    theaterCity.innerHTML = '<option value="">Select City</option>' + cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                    theaterCity.replaceChildren(new Option('Select City', ''));
+                    cities.forEach(c => {
+                        const id = Number(c.id);
+                        if (Number.isSafeInteger(id) && id > 0) theaterCity.add(new Option(c.name || 'Unnamed city', String(id)));
+                    });
                 }
             } catch (e) {
                 console.error('Error loading cities', e);
+                showToast('Could not load cities', 'error');
             }
         }
 
@@ -395,38 +404,41 @@
                 if (statEl) statEl.textContent = movies ? movies.length : 0;
 
                 let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>Title</th><th>Genre</th><th>Language</th><th>Duration</th><th>Rating</th><th>Actions</th></tr></thead><tbody>';
-                movies.forEach(m => html += `<tr>
-                    <td>#${m.id}</td><td><strong>${m.title}</strong></td><td><span class="badge badge-genre">${m.genre || 'General'}</span></td>
-                    <td><span class="badge badge-lang">${m.language || 'Multi'}</span></td><td>${m.durationMinutes ? m.durationMinutes + 'm' : 'N/A'}</td>
-                    <td><span class="badge badge-rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating || 'N/A'}</span></td>
-                    <td><button class="btn btn-sm btn-outline" onclick="editMovie(${m.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteMovie(${m.id})">Delete</button></td>
-                </tr>`);
+                movies.forEach(m => {
+                    const id = Number(m.id);
+                    if (!Number.isSafeInteger(id) || id <= 0) return;
+                    html += `<tr>
+                        <td>#${id}</td><td><strong>${escapeHtml(m.title || 'Untitled movie')}</strong></td><td><span class="badge badge-genre">${escapeHtml(m.genre || 'General')}</span></td>
+                        <td><span class="badge badge-lang">${escapeHtml(m.language || 'Multi')}</span></td><td>${escapeHtml(m.durationMinutes ? m.durationMinutes + 'm' : 'N/A')}</td>
+                        <td><span class="badge badge-rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${escapeHtml(m.rating || 'N/A')}</span></td>
+                        <td><button class="btn btn-sm btn-outline" onclick="editMovie(${id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteMovie(${id})">Delete</button></td>
+                    </tr>`;
+                });
                 html += '</tbody></table></div>';
                 document.getElementById('movies-table').innerHTML = movies.length ? html : '<div class="empty-state"><p>No movies added yet</p></div>';
 
                 const showMovie = document.getElementById('show-movie');
                 if (showMovie) {
-                    showMovie.innerHTML = '<option value="">Select Movie</option>' + movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+                    showMovie.replaceChildren(new Option('Select Movie', ''));
+                    movies.forEach(m => {
+                        const id = Number(m.id);
+                        if (Number.isSafeInteger(id) && id > 0) showMovie.add(new Option(m.title || 'Untitled movie', String(id)));
+                    });
                 }
-            } catch (e) { console.log('Error loading movies'); }
+            } catch (e) {
+                console.error('Error loading movies', e);
+                showToast('Could not load movies', 'error');
+            }
         }
 
         async function addMovie() {
-            const saveBtn = document.getElementById('movie-save-btn');
             const posterInput = document.getElementById('movie-poster').value.trim();
             const posterFile = document.getElementById('movie-poster-file').files?.[0] || null;
-            let posterUrl = null;
-            // Compress/resolve fail ho to clear message ke saath ruko — silent fail nahi
-            try {
-                posterUrl = posterFile
-                    ? await compressImageFile(posterFile) // mobile ke bade photos compress - warna request fail hoti hai
-                    : posterInput
-                        ? await resolvePosterSource(posterInput)
-                        : null;
-            } catch (e) {
-                showToast(e.message || 'Image process nahi ho payi', 'error');
-                return;
-            }
+            const posterUrl = posterFile
+                ? await readFileAsDataUrl(posterFile)
+                : posterInput
+                    ? await resolvePosterSource(posterInput)
+                    : null;
             const data = {
                 title: document.getElementById('movie-title').value.trim(),
                 genre: document.getElementById('movie-genre').value.trim(),
@@ -448,10 +460,6 @@
                 banner: posterUrl
             };
             if (!data.title) { showToast('Please enter movie title', 'error'); return; }
-            // Mobile par request thodi der leti hai — button disable karke double-tap se bachein
-            const originalBtnText = saveBtn.textContent;
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Saving...';
             try {
                 if (editingMovieId) {
                     await MovieAPI.update(editingMovieId, data);
@@ -463,11 +471,7 @@
                     resetMovieForm();
                 }
                 loadMovies();
-            } catch (e) { showToast(e.message || 'Movie save failed. Internet check karein aur dobara try karein.', 'error'); }
-            finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = editingMovieId ? 'Update Movie' : originalBtnText;
-            }
+            } catch (e) { showToast(e.message, 'error'); }
         }
 
         async function editMovie(id) {
@@ -528,15 +532,26 @@
                 if (statEl) statEl.textContent = theaters ? theaters.length : 0;
 
                 let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>Theater Name</th><th>Address</th><th>City</th></tr></thead><tbody>';
-                theaters.forEach(t => html += `<tr><td>#${t.id}</td><td><strong>${t.name}</strong></td><td>${t.address || 'N/A'}</td><td>${t.city?.name || 'N/A'}</td></tr>`);
+                theaters.forEach(t => {
+                    const id = Number(t.id);
+                    if (!Number.isSafeInteger(id) || id <= 0) return;
+                    html += `<tr><td>#${id}</td><td><strong>${escapeHtml(t.name || 'Unnamed theater')}</strong></td><td>${escapeHtml(t.address || 'N/A')}</td><td>${escapeHtml(t.city?.name || 'N/A')}</td></tr>`;
+                });
                 html += '</tbody></table></div>';
                 document.getElementById('theaters-table').innerHTML = theaters.length ? html : '<div class="empty-state"><p>No theaters added yet</p></div>';
 
                 const screenTheater = document.getElementById('screen-theater');
                 if (screenTheater) {
-                    screenTheater.innerHTML = '<option value="">Select Theater</option>' + theaters.map(t => `<option value="${t.id}">${t.name} (${t.city?.name || ''})</option>`).join('');
+                    screenTheater.replaceChildren(new Option('Select Theater', ''));
+                    theaters.forEach(t => {
+                        const id = Number(t.id);
+                        if (Number.isSafeInteger(id) && id > 0) screenTheater.add(new Option(`${t.name || 'Unnamed theater'} (${t.city?.name || ''})`, String(id)));
+                    });
                 }
-            } catch (e) { console.log('Error loading theaters'); }
+            } catch (e) {
+                console.error('Error loading theaters', e);
+                showToast('Could not load theaters', 'error');
+            }
         }
 
         async function addTheater() {
@@ -560,17 +575,29 @@
             try {
                 const screens = await ScreenAPI.getAll();
                 let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>Screen Name</th><th>Capacity</th><th>Theater</th></tr></thead><tbody>';
-                screens.forEach(s => html += `<tr><td>#${s.id}</td><td><strong>${s.name}</strong></td><td>${s.totalSeats || '100'} seats</td><td>${s.theater?.name || 'N/A'}</td></tr>`);
+                screens.forEach(s => {
+                    const id = Number(s.id);
+                    if (!Number.isSafeInteger(id) || id <= 0) return;
+                    html += `<tr><td>#${id}</td><td><strong>${escapeHtml(s.name || 'Unnamed screen')}</strong></td><td>${escapeHtml(s.totalSeats || 'N/A')} seats</td><td>${escapeHtml(s.theater?.name || 'N/A')}</td></tr>`;
+                });
                 html += '</tbody></table></div>';
                 document.getElementById('screens-table').innerHTML = screens.length ? html : '<div class="empty-state"><p>No screens added yet</p></div>';
 
-                const opts = '<option value="">Select Screen</option>' + screens.map(s => `<option value="${s.id}">${s.name} — ${s.theater?.name || ''}</option>`).join('');
                 ['seat-screen', 'show-screen'].forEach(id => {
                     const el = document.getElementById(id);
-                    if (el) el.innerHTML = opts;
+                    if (el) {
+                        el.replaceChildren(new Option('Select Screen', ''));
+                        screens.forEach(s => {
+                            const screenId = Number(s.id);
+                            if (Number.isSafeInteger(screenId) && screenId > 0) {
+                                el.add(new Option(`${s.name || 'Unnamed screen'} — ${s.theater?.name || ''}`, String(screenId)));
+                            }
+                        });
+                    }
                 });
             } catch (e) {
                 console.error('Error loading screens', e);
+                showToast('Could not load screens', 'error');
             }
         }
 
@@ -604,13 +631,17 @@
                 const seats = await SeatAPI.getByScreen(screenId);
                 return renderSeatsTable(seats);
             } catch (e) {
-                document.getElementById('seats-table').innerHTML = '';
+                showEmpty('seats-table', 'Could not load seats for this screen');
             }
         }
 
         function renderSeatsTable(seats) {
             let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>Seat #</th><th>Row</th><th>Col</th><th>Type</th></tr></thead><tbody>';
-            seats.forEach(s => html += `<tr><td>#${s.id}</td><td><strong>${s.seatNumber}</strong></td><td>${s.row || 'A'}</td><td>${s.col || '1'}</td><td><span class="badge badge-genre">${s.seatType || 'REGULAR'}</span></td></tr>`);
+            seats.forEach(s => {
+                const id = Number(s.id);
+                if (!Number.isSafeInteger(id) || id <= 0) return;
+                html += `<tr><td>#${id}</td><td><strong>${escapeHtml(s.seatNumber || 'N/A')}</strong></td><td>${escapeHtml(s.row || 'N/A')}</td><td>${escapeHtml(s.col || 'N/A')}</td><td><span class="badge badge-genre">${escapeHtml(s.seatType || 'REGULAR')}</span></td></tr>`;
+            });
             html += '</tbody></table></div>';
             document.getElementById('seats-table').innerHTML = seats.length ? html : '<div class="empty-state"><p>No seats for this screen</p></div>';
         }
@@ -648,18 +679,25 @@
                 if (statEl) statEl.textContent = shows ? shows.length : 0;
 
                 let html = '<div class="table-responsive"><table><thead><tr><th>ID</th><th>Movie</th><th>Screen & Theater</th><th>Date</th><th>Timing</th><th>Price</th><th>Actions</th></tr></thead><tbody>';
-                shows.forEach(s => html += `<tr>
-                    <td>#${s.id}</td>
-                    <td><strong>${s.movie?.title || 'Movie'}</strong></td>
-                    <td>${s.screen?.name || 'Screen'} (${s.screen?.theater?.name || 'Theater'})</td>
-                    <td>${s.showDate}</td>
-                    <td>${s.startTime}${s.endTime ? ' - ' + s.endTime : ''}</td>
-                    <td><strong style="color:var(--success)">₹${s.ticketPrice || 0}</strong></td>
-                    <td><button class="btn btn-sm btn-danger" onclick="deleteShow(${s.id})">Delete</button></td>
-                </tr>`);
+                shows.forEach(s => {
+                    const id = Number(s.id);
+                    if (!Number.isSafeInteger(id) || id <= 0) return;
+                    html += `<tr>
+                        <td>#${id}</td>
+                        <td><strong>${escapeHtml(s.movie?.title || 'Movie')}</strong></td>
+                        <td>${escapeHtml(s.screen?.name || 'Screen')} (${escapeHtml(s.screen?.theater?.name || 'Theater')})</td>
+                        <td>${escapeHtml(s.showDate || 'N/A')}</td>
+                        <td>${escapeHtml(s.startTime || 'N/A')}${s.endTime ? ' - ' + escapeHtml(s.endTime) : ''}</td>
+                        <td><strong style="color:var(--success)">₹${escapeHtml(s.ticketPrice || 0)}</strong></td>
+                        <td><button class="btn btn-sm btn-danger" onclick="deleteShow(${id})">Delete</button></td>
+                    </tr>`;
+                });
                 html += '</tbody></table></div>';
                 document.getElementById('shows-table').innerHTML = shows.length ? html : '<div class="empty-state"><p>No shows added yet</p></div>';
-            } catch (e) { console.log('Error loading shows'); }
+            } catch (e) {
+                console.error('Error loading shows', e);
+                showToast('Could not load shows', 'error');
+            }
         }
 
         async function deleteShow(id) {
@@ -709,44 +747,8 @@
 
         async function loadBookingsHistory() {
             try {
-                const users = await UserAPI.getAll();
-                const shows = await ShowAPI.getAll();
-                
-                allBookings = [];
-                
-                // Pehle direct saari bookings try karo (1 hi API call - fast aur reliable)
-                let loaded = false;
-                try {
-                    const all = await BookingAPI.getAll();
-                    if (Array.isArray(all)) {
-                        all.forEach(booking => {
-                            booking.user = users.find(u => String(u.id) === String(booking.userId)) || {};
-                            booking.show = shows.find(s => String(s.id) === String(booking.showId));
-                        });
-                        allBookings = all;
-                        loaded = true;
-                    }
-                } catch (e) {
-                    console.warn('Direct /bookings load failed, per-user fallback try kar rahe hain...', e);
-                }
-
-                // Fallback: har user ke liye alag se bookings lo
-                if (!loaded) {
-                    for (const user of users) {
-                        try {
-                            const userBookings = await BookingAPI.getByUser(user.id);
-                            if (Array.isArray(userBookings)) {
-                                userBookings.forEach(booking => {
-                                    booking.user = user;
-                                    booking.show = shows.find(s => String(s.id) === String(booking.showId));
-                                });
-                                allBookings.push(...userBookings);
-                            }
-                        } catch (e) {
-                            console.warn(`Could not load bookings for user ${user.id}`, e);
-                        }
-                    }
-                }
+                allBookings = await BookingAPI.getAll();
+                if (!Array.isArray(allBookings)) throw new Error('Booking history response is invalid.');
 
                 // Apply filters
                 let filteredBookings = allBookings.slice();
@@ -760,10 +762,12 @@
                 if (dateFilter) {
                     const now = new Date();
                     filteredBookings = filteredBookings.filter(b => {
-                        const bookingDate = new Date(b.createdAt || b.bookingDate || b.createdDate);
+                        const bookingDate = new Date(b.bookedAt || b.createdAt || b.bookingDate || b.createdDate);
                         if (dateFilter === 'today') return bookingDate.toDateString() === now.toDateString();
-                        if (dateFilter === 'week') return (now - bookingDate) <= 7 * 24 * 60 * 60 * 1000;
-                        if (dateFilter === 'month') return (now - bookingDate) <= 30 * 24 * 60 * 60 * 1000;
+                        const age = now - bookingDate;
+                        if (!Number.isFinite(age) || age < 0) return false;
+                        if (dateFilter === 'week') return age <= 7 * 24 * 60 * 60 * 1000;
+                        if (dateFilter === 'month') return age <= 30 * 24 * 60 * 60 * 1000;
                         return true;
                     });
                 }
@@ -836,12 +840,14 @@
                 <tbody>`;
 
             bookings.forEach(booking => {
+                const bookingId = Number(booking.id);
+                if (!Number.isSafeInteger(bookingId) || bookingId <= 0) return;
                 const user = booking.user || {};
                 const show = booking.show || {};
                 const movie = show.movie || {};
                 const theater = show.screen?.theater || {};
                 const seats = formatBookingSeats(booking.seatNumbers || booking.seats);
-                const bookingDate = new Date(booking.createdAt || booking.bookingDate);
+                const bookingDate = new Date(booking.bookedAt || booking.createdAt || booking.bookingDate);
                 const status = booking.paymentStatus || booking.status || 'PENDING';
                 const statusBadge = status === 'CONFIRMED' 
                     ? '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Confirmed</span>'
@@ -850,23 +856,23 @@
                     : '<span class="badge badge-warning"><i class="fa-solid fa-hourglass-half"></i> Pending</span>';
 
                 html += `<tr>
-                    <td><strong>#${booking.id}</strong></td>
+                    <td><strong>#${bookingId}</strong></td>
                     <td>
                         <div style="font-size:0.9rem;">
-                            <strong>${user.name || user.username || 'Unknown'}</strong><br>
-                            <small style="color:var(--text-muted);">${user.email || ''}</small>
+                            <strong>${escapeHtml(user.name || user.username || 'Unknown')}</strong><br>
+                            <small style="color:var(--text-muted);">${escapeHtml(user.email || '')}</small>
                         </div>
                     </td>
-                    <td>${movie.title || 'N/A'}</td>
-                    <td>${theater.name || 'N/A'}</td>
-                    <td>${show.showDate || 'N/A'} ${show.startTime || ''}</td>
-                    <td><span class="badge badge-info">${seats}</span></td>
-                    <td><strong style="color:var(--success);">₹${booking.totalPrice || 0}</strong></td>
+                    <td>${escapeHtml(movie.title || 'N/A')}</td>
+                    <td>${escapeHtml(theater.name || 'N/A')}</td>
+                    <td>${escapeHtml(show.showDate || 'N/A')} ${escapeHtml(show.startTime || '')}</td>
+                    <td><span class="badge badge-info">${escapeHtml(seats)}</span></td>
+                    <td><strong style="color:var(--success);">₹${escapeHtml(booking.totalPrice || 0)}</strong></td>
                     <td>${statusBadge}</td>
                     <td><small>${bookingDate.toLocaleDateString()} ${bookingDate.toLocaleTimeString()}</small></td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="viewBookingDetails(${booking.id})">View</button>
-                        ${status !== 'CANCELLED' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking(${booking.id})">Cancel</button>` : ''}
+                        <button class="btn btn-sm btn-info" onclick="viewBookingDetails(${bookingId})">View</button>
+                        ${status !== 'CANCELLED' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking(${bookingId})">Cancel</button>` : ''}
                     </td>
                 </tr>`;
             });
@@ -893,7 +899,7 @@
         }
 
                 function viewBookingDetails(bookingId) {
-            const booking = allBookings.find(b => b.id === bookingId);
+            const booking = allBookings.find(b => Number(b.id) === Number(bookingId));
             if (!booking) {
                 showToast('Booking not found', 'error');
                 return;
@@ -904,41 +910,41 @@
             const movie = show.movie || {};
             const theater = show.screen?.theater || {};
             const screen = show.screen || {};
-            const status = booking.paymentStatus || 'PENDING';
+            const status = booking.status || booking.paymentStatus || 'PENDING';
             const bookingDate = new Date(booking.createdAt || booking.bookingDate);
             const seats = formatBookingSeats(booking.seatNumbers || booking.seats);
             
             const details = `
             <div style="text-align:left; line-height:1.6;">
-                <h3 style="margin-bottom:1.25rem; color:var(--primary); font-family:'Outfit', sans-serif;"><i class="fa-solid fa-clipboard-list"></i> Booking Details - #${booking.id}</h3>
+                <h3 style="margin-bottom:1.25rem; color:var(--primary); font-family:'Outfit', sans-serif;"><i class="fa-solid fa-clipboard-list"></i> Booking Details - #${escapeHtml(booking.id)}</h3>
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem;">
                     <div>
                         <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-user"></i> User Information</h4>
-                        <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
-                        <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+                        <p><strong>Name:</strong> ${escapeHtml(user.name || 'N/A')}</p>
+                        <p><strong>Email:</strong> ${escapeHtml(user.email || 'N/A')}</p>
+                        <p><strong>Phone:</strong> ${escapeHtml(user.phone || 'N/A')}</p>
                     </div>
 
                     <div>
                         <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-clapperboard"></i> Movie Details</h4>
-                        <p><strong>Title:</strong> ${movie.title || 'N/A'}</p>
-                        <p><strong>Genre:</strong> ${movie.genre || 'N/A'}</p>
-                        <p><strong>Language:</strong> ${movie.language || 'N/A'}</p>
+                        <p><strong>Title:</strong> ${escapeHtml(movie.title || 'N/A')}</p>
+                        <p><strong>Genre:</strong> ${escapeHtml(movie.genre || 'N/A')}</p>
+                        <p><strong>Language:</strong> ${escapeHtml(movie.language || 'N/A')}</p>
                     </div>
 
                     <div>
                         <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-building-columns"></i> Show Details</h4>
-                        <p><strong>Theater:</strong> ${theater.name || 'N/A'}</p>
-                        <p><strong>Screen:</strong> ${screen.name || 'N/A'}</p>
-                        <p><strong>Timing:</strong> ${show.showDate || ''} ${show.startTime || ''}</p>
+                        <p><strong>Theater:</strong> ${escapeHtml(theater.name || 'N/A')}</p>
+                        <p><strong>Screen:</strong> ${escapeHtml(screen.name || 'N/A')}</p>
+                        <p><strong>Timing:</strong> ${escapeHtml(show.showDate || '')} ${escapeHtml(show.startTime || '')}</p>
                     </div>
 
                     <div>
                         <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.9rem; text-transform:uppercase;"><i class="fa-solid fa-credit-card"></i> Payment & Seats</h4>
-                        <p><strong>Seats:</strong> <span class="badge badge-info">${seats}</span></p>
-                        <p><strong>Total Price:</strong> <strong style="color:var(--success);">₹${booking.totalPrice || 0}</strong></p>
-                        <p><strong>Status:</strong> ${status}</p>
+                        <p><strong>Seats:</strong> <span class="badge badge-info">${escapeHtml(seats)}</span></p>
+                        <p><strong>Total Price:</strong> <strong style="color:var(--success);">₹${escapeHtml(booking.totalPrice || 0)}</strong></p>
+                        <p><strong>Status:</strong> ${escapeHtml(status)}</p>
                     </div>
                 </div>
             </div>
@@ -949,11 +955,11 @@
         }
 
         async function cancelBooking(bookingId) {
-            if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
+            if (!confirm('Cancel this booking? If it is paid and the show has not started, a full refund will be requested.')) return;
 
             try {
                 await BookingAPI.cancel(bookingId);
-                showToast('Booking cancelled successfully!', 'success');
+                showToast('Booking cancelled. Any eligible refund has been requested.', 'success');
                 await loadBookingsHistory();
             } catch (e) {
                 console.error('Cancel booking failed', e);

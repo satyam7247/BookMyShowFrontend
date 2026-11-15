@@ -35,8 +35,8 @@
         <div class="grid grid-3" id="theaters-grid"></div>
     </div>
 
-    <script src="../js/api.js?v=2"></script>
-    <script src="../js/utils.js?v=2"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
     <script>
         async function loadCities() {
             try {
@@ -44,12 +44,14 @@
                 const bar = document.getElementById('city-bar');
                 if (!cities) return;
                 cities.forEach(city => {
+                    const cityId = Number(city.id);
+                    if (!Number.isSafeInteger(cityId) || cityId <= 0) return;
                     const chip = document.createElement('button');
                     chip.className = 'city-chip';
-                    chip.textContent = city.name;
+                    chip.textContent = city.name || 'Unnamed city';
                     chip.onclick = () => {
                         activateChip(chip);
-                        loadTheatersByCity(city.id);
+                        loadTheatersByCity(cityId);
                     };
                     bar.appendChild(chip);
                 });
@@ -85,22 +87,30 @@
             const grid = document.getElementById('theaters-grid');
             if (!theaters || theaters.length === 0) { showEmpty('theaters-grid', 'No cinema theaters available'); return; }
             grid.innerHTML = theaters.map(t => `
+                ${Number.isSafeInteger(Number(t.id)) && Number(t.id) > 0 ? `
                 <div class="card" style="padding:0;">
                     <div class="card-body" style="padding:1.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
                             <div style="width:46px; height:46px; border-radius:var(--radius-md); background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"><i class="fa-solid fa-building-columns"></i></div>
                             <div>
-                                <h3 style="font-size:1.2rem; margin:0;">${t.name}</h3>
-                                <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-location-dot"></i> ${t.city?.name || 'City'}, ${t.city?.state || ''}</span>
+                                <h3 style="font-size:1.2rem; margin:0;">${escapeHtml(t.name || 'Theater')}</h3>
+                                <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(t.city?.name || 'City')}, ${escapeHtml(t.city?.state || '')}</span>
                             </div>
                         </div>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:1rem;">${t.address || 'Premium multiplex audio & 4K laser projection screening.'}</p>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:1rem;">${escapeHtml(t.address || 'Premium multiplex audio & 4K laser projection screening.')}</p>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-sm btn-outline btn-block" onclick="viewScreens(${t.id}, '${t.name}')"><i class="fa-solid fa-desktop"></i> View Screens & Specs</button>
+                        <button class="btn btn-sm btn-outline btn-block" data-view-screens="${Number(t.id)}"><i class="fa-solid fa-desktop"></i> View Screens & Specs</button>
                     </div>
                 </div>
+                ` : ''}
             `).join('');
+            grid.querySelectorAll('[data-view-screens]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const theater = theaters.find(item => String(item.id) === button.dataset.viewScreens);
+                    if (theater) viewScreens(Number(theater.id), theater.name || 'Theater');
+                });
+            });
         }
 
         async function viewScreens(theaterId, theaterName) {
@@ -108,7 +118,7 @@
                 const screens = await ScreenAPI.getByTheater(theaterId);
                 if (!screens || screens.length === 0) { showToast('No screens found for this theater', 'info'); return; }
                 let msg = `▶ ${theaterName}\nAvailable Screens:\n`;
-                screens.forEach(s => msg += `\n• ${s.name} (${s.totalSeats || '100'} Seats)`);
+                screens.forEach(s => msg += `\n• ${s.name || 'Unnamed screen'} (${s.totalSeats || 'N/A'} Seats)`);
                 alert(msg);
             } catch (e) {
                 showToast('Could not load screens', 'error');

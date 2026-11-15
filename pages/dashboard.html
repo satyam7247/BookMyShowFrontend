@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard - BookMyShow</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -25,7 +24,7 @@
 
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">My Account</h2>
+            <h2 class="section-title">My Account & Dashboard</h2>
         </div>
 
         <!-- PROFILE CARD -->
@@ -49,263 +48,14 @@
         </section>
     </div>
 
-    <!-- PROFILE MODAL -->
-    <div class="profile-modal-overlay" id="profile-modal-overlay" onclick="if(event.target===this) closeProfileModal()">
-        <div class="profile-modal">
-            <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-            <div class="profile-modal-header">
-                <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-                <div class="profile-avatar-wrap">
-                    <div class="profile-avatar" id="profile-avatar"></div>
-                    <button class="profile-avatar-edit" onclick="document.getElementById('profile-photo-input').click()" title="Change photo"><i class="fa-solid fa-camera"></i></button>
-                    <input type="file" id="profile-photo-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
-                </div>
-                <h3 id="profile-modal-name" style="margin:0.75rem 0 0.25rem; font-family:'Outfit',sans-serif; color:#fff;"></h3>
-                <button class="btn btn-primary" id="profile-edit-btn" onclick="toggleProfileEdit(true)" style="margin-top:0.9rem; width:100%;"><i class="fa-solid fa-pen"></i> Edit Profile</button>
-            </div>
-            <div class="profile-modal-body" id="profile-view-body"></div>
-            <div class="profile-modal-body" id="profile-edit-body" style="display:none;"></div>
-            <div class="profile-modal-actions" id="profile-save-wrap" style="display:none;">
-                <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfileChanges()" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="../js/api.js?v=2"></script>
-    <script src="../js/utils.js?v=2"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
     <script>
-        // ===== PROFILE MENU & MODAL =====
-        // Profile fields ka source-of-truth backend hai (session 'bms_user').
-        // Refresh par backend se taaza data laate hain taaki sab devices par same dikhe.
-        async function refreshUserFromBackend() {
-            const user = getLoggedInUser();
-            if (!user || !user.id) return;
-            try {
-                const fresh = await UserAPI.getById(user.id);
-                if (fresh && (fresh.name || fresh.email)) {
-                    setLoggedInUser({ ...user, ...fresh });
-                }
-            } catch (e) { /* offline / endpoint missing — session data use karo */ }
-        }
-
-        function getProfilePhoto() {
-            try {
-                const user = getLoggedInUser();
-                // Pehle device-local photo, warna backend me saved photo (sync ke liye)
-                return localStorage.getItem(`bms_profile_photo_${user.id}`) || user?.profilePhoto || '';
-            } catch (e) { return ''; }
-        }
-
-        function mergedProfile() {
-            return getLoggedInUser() || {};
-        }
-
-        function renderAvatar(el, profile) {
-            const photo = getProfilePhoto();
-            if (photo) {
-                el.innerHTML = `<img src="${photo}" alt="Profile photo" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
-            } else {
-                el.innerHTML = `<span style="font-weight:800;">${(profile.name || 'U').charAt(0).toUpperCase()}</span>`;
-            }
-        }
-
-        function toggleProfileMenu(e) {
-            e.stopPropagation();
-            document.getElementById('profile-dropdown').classList.toggle('open');
-        }
-        document.addEventListener('click', () => document.getElementById('profile-dropdown')?.classList.remove('open'));
-
-        function openProfileModal() {
-            document.getElementById('profile-dropdown')?.classList.remove('open');
-            const profile = mergedProfile();
-            renderAvatar(document.getElementById('profile-avatar'), profile);
-            document.getElementById('profile-modal-name').textContent = profile.name || 'Movie Lover';
-            document.getElementById('profile-view-body').innerHTML = `
-                <div class="profile-detail-row"><span><i class="fa-solid fa-user"></i> Full Name</span><strong>${profile.name || '—'}</strong></div>
-                <div class="profile-detail-row"><span><i class="fa-solid fa-envelope"></i> Email</span><strong>${profile.email || '—'}</strong></div>
-                <div class="profile-detail-row"><span><i class="fa-solid fa-mobile-screen"></i> Phone</span><strong>${profile.phone || '—'}</strong></div>
-                <div class="profile-detail-row"><span><i class="fa-solid fa-location-dot"></i> City</span><strong id="profile-city-value">${profile.city || 'Detecting...'}</strong></div>
-            `;
-            toggleProfileEdit(false);
-            document.getElementById('profile-modal-overlay').classList.add('open');
-            detectUserCity(profile.city);
-        }
-
-        // ===== GPS LOCATION: City auto-detect =====
-        function detectUserCity(savedCity) {
-            const el = document.getElementById('profile-city-value');
-            if (!el) return;
-            const user = getLoggedInUser();
-            const cacheKey = `bms_user_city_${user?.id || 'guest'}`;
-            // City sirf GPS se aati hai (fixed) — profile.city se override nahi hoti
-            const cached = localStorage.getItem(cacheKey);
-            if (cached) el.textContent = cached;
-            if (!navigator.geolocation) { if (!cached) el.textContent = '—'; return; }
-            if (!cached) el.textContent = 'Detecting...';
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                try {
-                    const { latitude, longitude } = pos.coords;
-                    // Free reverse-geocode API — koi API key nahi chahiye
-                    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-                    const data = await res.json();
-                    const city = data.city || data.locality || data.principalSubdivision;
-                    if (city) {
-                        el.textContent = city + ' (approx)';
-                        localStorage.setItem(cacheKey, city);
-                    } else if (!cached) {
-                        el.textContent = '—';
-                    }
-                } catch (e) {
-                    if (!cached) el.textContent = '—';
-                }
-            }, () => {
-                if (!cached) el.textContent = '—';
-            }, { timeout: 10000, enableHighAccuracy: true });
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profile-modal-overlay').classList.remove('open');
-        }
-
-        function toggleProfileEdit(editMode) {
-            const profile = mergedProfile();
-            document.getElementById('profile-view-body').style.display = editMode ? 'none' : 'block';
-            document.getElementById('profile-edit-body').style.display = editMode ? 'block' : 'none';
-            document.getElementById('profile-edit-btn').style.display = editMode ? 'none' : 'inline-flex';
-            document.getElementById('profile-save-wrap').style.display = editMode ? 'flex' : 'none';
-            if (editMode) {
-                document.getElementById('profile-edit-body').innerHTML = `
-                    <label class="profile-edit-label">Full Name</label>
-                    <input type="text" class="form-input" id="edit-name" value="${(profile.name || '').replace(/"/g, '&quot;')}" />
-                    <label class="profile-edit-label">Email</label>
-                    <input type="email" class="form-input" id="edit-email" value="${profile.email || ''}" />
-                    <label class="profile-edit-label">Phone</label>
-                    <input type="tel" class="form-input" id="edit-phone" value="${profile.phone || ''}" />
-                    <p style="color:var(--text-secondary); font-size:0.8rem; margin:0.75rem 0 0;">📍 Location GPS se auto-detect hoti hai — manually edit nahi ho sakti.</p>
-                `;
-            }
-        }
-
-        // Photo ko chhota karke (compressed square) dataURL banata hai —
-        // localStorage + backend dono me save karne ke liye
-        function compressImageFile(file, maxSize) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const size = Math.min(maxSize, Math.max(img.width, img.height));
-                        const side = Math.min(img.width, img.height);
-                        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
-                        const canvas = document.createElement('canvas');
-                        canvas.width = size; canvas.height = size;
-                        canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, size, size);
-                        resolve(canvas.toDataURL('image/jpeg', 0.85));
-                    };
-                    img.onerror = () => reject(new Error('Invalid image'));
-                    img.src = reader.result;
-                };
-                reader.onerror = () => reject(new Error('Could not read file'));
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function handlePhotoUpload(event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
-            if (file.size > 3 * 1024 * 1024) { showToast('Image too large (max 3MB)', 'error'); return; }
-            try {
-                // 256x256 compressed square — storage friendly
-                const dataUrl = await compressImageFile(file, 256);
-                const user = getLoggedInUser();
-                // 1) Is device ka localStorage
-                localStorage.setItem(`bms_profile_photo_${user.id}`, dataUrl);
-                // 2) Backend me save karo — taaki sab devices par sync ho
-                let backendSynced = false;
-                try {
-                    const saved = await UserAPI.update(user.id, { ...user, profilePhoto: dataUrl });
-                    if (saved && (saved.name || saved.id)) {
-                        setLoggedInUser({ ...user, ...saved, profilePhoto: saved.profilePhoto || dataUrl });
-                        backendSynced = true;
-                    } else {
-                        setLoggedInUser({ ...user, profilePhoto: dataUrl });
-                    }
-                } catch (e) {
-                    setLoggedInUser({ ...user, profilePhoto: dataUrl });
-                }
-                renderAvatar(document.getElementById('profile-avatar'), mergedProfile());
-                const welcomeAvatar = document.getElementById('welcome-avatar');
-                if (welcomeAvatar) renderAvatar(welcomeAvatar, mergedProfile());
-                showToast(backendSynced ? 'Profile photo updated (synced to all devices)' : 'Profile photo updated (this device only)', 'success');
-                // Navbar wala chhota avatar bhi turant update ho
-                if (typeof updateNavUser === 'function') updateNavUser();
-            } catch (e) {
-                showToast(e.message === 'Invalid image' ? 'Invalid image file' : 'Could not save photo (storage full)', 'error');
-            }
-        }
-
-        async function saveProfileChanges() {
-            const updated = {
-                name: document.getElementById('edit-name').value.trim(),
-                email: document.getElementById('edit-email').value.trim(),
-                phone: document.getElementById('edit-phone').value.trim()
-            };
-            // City GPS se fix hai — edit me override nahi hoti
-            const user = getLoggedInUser();
-            const savedCity = localStorage.getItem(`bms_user_city_${user?.id || 'guest'}`) || user?.city || '';
-            if (savedCity) updated.city = savedCity;
-            if (!updated.name || !updated.email) { showToast('Name and Email are required', 'error'); return; }
-            // Pehle backend me save karo (sab devices par sync ke liye)
-            try {
-                const saved = await UserAPI.update(user.id, { ...user, ...updated });
-                if (saved && (saved.name || saved.id)) {
-                    setLoggedInUser({ ...user, ...saved });
-                } else {
-                    setLoggedInUser({ ...user, ...updated });
-                }
-                showToast('Profile saved', 'success');
-            } catch (e) {
-                // Backend endpoint nahi hai — sirf is device par save hoga
-                setLoggedInUser({ ...user, ...updated });
-                showToast('Saved on this device only — backend user-update endpoint missing', 'error');
-            }
-            openProfileModal();
-            window.renderWelcomeCard && window.renderWelcomeCard();
-        }
-
-        // ===== WELCOME CARD (with profile photo) =====
-        window.renderWelcomeCard = function() {
-            const user = mergedProfile();
-            const el = document.getElementById('user-info');
-            if (!el) return;
-            el.innerHTML = `
-                <div class="form-card" style="padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; border:1px solid var(--border-card);">
-                    <div style="display:flex; align-items:center; gap:1.25rem;">
-                        <div id="welcome-avatar" style="width:60px; height:60px; border-radius:var(--radius-full); background:var(--primary-subtle); color:var(--primary); font-size:2rem; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px solid var(--primary-glow); flex-shrink:0;"></div>
-                        <div>
-                            <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Hi, ${user.name || 'Movie Lover'}</h3>
-                            <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;"><i class="fa-solid fa-envelope"></i> ${user.email || ''} &nbsp;|&nbsp; <i class="fa-solid fa-mobile-screen"></i> ${user.phone || 'Standard User Account'}</p>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                        <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
-                    </div>
-                </div>
-            `;
-            renderAvatar(document.getElementById('welcome-avatar'), user);
-        };
-
         async function cancelBooking(id) {
-            if (!confirm('Are you sure you want to cancel this ticket booking?')) return;
+            if (!confirm('Cancel this booking? If it is paid and the show has not started, a full refund will be requested.')) return;
             try {
-                await BookingAPI.cancel(id).catch(() => {});
-                try {
-                    let localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
-                    localBookings = localBookings.filter(b => String(b.id) !== String(id));
-                    localStorage.setItem('bms_extra_bookings', JSON.stringify(localBookings));
-                } catch (e) {}
-                showToast('Booking cancelled successfully', 'success');
+                await BookingAPI.cancel(id);
+                showToast('Booking cancelled. Any eligible refund has been requested.', 'success');
                 window.location.reload();
             } catch (e) {
                 showToast(e.message || 'Could not cancel booking', 'error');
@@ -325,83 +75,79 @@
                 return;
             }
 
-            renderWelcomeCard();
-            await refreshUserFromBackend();
-            renderWelcomeCard();
-
-            // Agar "My Profile" nav button se aaye (#profile), to modal auto-open karo
-            if (window.location.hash === '#profile') {
-                openProfileModal();
-                history.replaceState(null, '', window.location.pathname);
-            }
-            // Dashboard pe hi ho aur My Profile dobara click karo to bhi modal khule
-            window.addEventListener('hashchange', () => {
-                if (window.location.hash === '#profile') {
-                    openProfileModal();
-                    history.replaceState(null, '', window.location.pathname);
-                }
-            });
+            document.getElementById('user-info').innerHTML = `
+                <div class="form-card" style="padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.25rem; border:1px solid var(--border-card);">
+                    <div style="display:flex; align-items:center; gap:1.25rem;">
+                        <div style="width:60px; height:60px; border-radius:var(--radius-full); background:var(--primary-subtle); color:var(--primary); font-size:2rem; display:flex; align-items:center; justify-content:center; font-weight:800; border:2px solid var(--primary-glow);">
+                            ${escapeHtml((user.name || 'U').charAt(0).toUpperCase())}
+                        </div>
+                        <div>
+                            <h3 style="font-family:'Outfit',sans-serif; font-size:1.6rem; color:#fff; margin-bottom:0.25rem;">Welcome back, ${escapeHtml(user.name || 'Movie Lover')} <i class="fa-solid fa-hand" style="color:var(--accent);"></i></h3>
+                            <p style="color:var(--text-secondary); font-size:0.92rem; margin:0;"><i class="fa-solid fa-envelope"></i> ${escapeHtml(user.email || '')} &nbsp;|&nbsp; <i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(user.phone || 'Standard User Account')}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="bookings.html" class="btn btn-primary btn-lg">View Full Ticket Pass</a>
+                    </div>
+                </div>
+            `;
 
             // Load bookings
             const bookingsEl = document.getElementById('dashboard-bookings');
             showLoading('dashboard-bookings');
             try {
-                let apiBookings = [];
-                try {
-                    apiBookings = await BookingAPI.getByUser(user.id);
-                } catch (e) {}
-
-                let localBookings = [];
-                try {
-                    localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
-                } catch (e) {}
-
-                const combinedMap = new Map();
-                (apiBookings || []).forEach(b => {
-                    if (b && b.status === 'CONFIRMED') {
-                        combinedMap.set(String(b.id), {
+                const apiBookings = await BookingAPI.getByUser(user.id);
+                if (!Array.isArray(apiBookings)) throw new Error('Booking history response is invalid.');
+                const activeList = apiBookings
+                    .filter(b => b && b.status === 'CONFIRMED')
+                    .map(b => {
+                        const bookingId = Number(b.id);
+                        if (!Number.isSafeInteger(bookingId) || bookingId <= 0) return null;
+                        return {
                             id: b.id,
-                            movieTitle: b.show?.movie?.title || 'Movie Show',
-                            theaterName: b.show?.screen?.theater?.name || 'Multiplex',
-                            screenName: b.show?.screen?.name || 'Screen 1',
-                            showDate: b.show?.showDate || 'Today',
-                            startTime: b.show?.startTime || '19:00',
-                            seats: b.seats ? b.seats.map(s => s.seatNumber).join(', ') : 'A1, A2',
-                            food: 'Popcorn Combo',
-                            totalPrice: b.totalPrice || 300,
+                            movieTitle: b.show?.movie?.title || 'Unknown movie',
+                            theaterName: b.show?.screen?.theater?.name || 'Unknown theater',
+                            screenName: b.show?.screen?.name || 'Unknown screen',
+                            showDate: b.show?.showDate || 'N/A',
+                            startTime: b.show?.startTime || 'N/A',
+                            seats: b.seats?.map(s => s.seatNumber).filter(Boolean).join(', ') || 'N/A',
+                            food: Array.isArray(b.foodItems) && b.foodItems.length
+                                ? b.foodItems.map(item => `${item.name} x${item.quantity}`).join(', ')
+                                : '',
+                            foodDeliveryTime: b.foodDeliveryTime || '',
+                            totalPrice: b.totalPrice ?? 'N/A',
                             status: 'CONFIRMED'
-                        });
-                    }
-                });
-
-                localBookings.forEach(b => {
-                    if (b && b.status === 'CONFIRMED') {
-                        combinedMap.set(String(b.id), b);
-                    }
-                });
-
-                const activeList = Array.from(combinedMap.values());
+                        };
+                    })
+                    .filter(Boolean);
                 if (activeList.length === 0) {
                     showEmpty('dashboard-bookings', 'No active show bookings or snacks orders found');
                 } else {
-                    bookingsEl.innerHTML = activeList.map(b => `
+                    bookingsEl.innerHTML = activeList.map(b => {
+                        const bookingId = Number(b.id);
+                        return `
                                 <div class="show-card" style="border-left:5px solid var(--success); padding:1.4rem;">
                                     <div class="show-info">
                                         <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
                                             <span class="badge" style="background:var(--success-glow); color:var(--success);"><i class="fa-solid fa-circle-check"></i> CONFIRMED TICKET</span>
-                                            <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${b.id}</span>
+                                            <span style="font-size:0.8rem; color:var(--text-muted);">TICKET #${bookingId}</span>
                                         </div>
-                                        <h4 style="font-size:1.3rem;"><i class="fa-solid fa-clapperboard" style="color:var(--primary);"></i> ${b.movieTitle}</h4>
-                                        <p><i class="fa-solid fa-building-columns" style="color:var(--primary);"></i> ${b.theaterName} — ${b.screenName}</p>
-                                        <p><i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i> ${b.showDate} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color:var(--primary);"></i> ${b.startTime} &nbsp;|&nbsp; <i class="fa-solid fa-couch" style="color:var(--primary);"></i> Seats: <strong style="color:var(--primary);">${b.seats}</strong></p>
-                                        ${b.food ? `<p style="margin-top:0.25rem;"><i class="fa-solid fa-hotdog" style="color:var(--primary);"></i> Snacks: <strong style="color:var(--accent);">${b.food}</strong></p>` : ''}
+                                        <h4 style="font-size:1.3rem;"><i class="fa-solid fa-clapperboard" style="color:var(--primary);"></i> ${escapeHtml(b.movieTitle)}</h4>
+                                        <p><i class="fa-solid fa-building-columns" style="color:var(--primary);"></i> ${escapeHtml(b.theaterName)} — ${escapeHtml(b.screenName)}</p>
+                                        <p><i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i> ${escapeHtml(b.showDate)} &nbsp;|&nbsp; <i class="fa-regular fa-clock" style="color:var(--primary);"></i> ${escapeHtml(b.startTime)} &nbsp;|&nbsp; <i class="fa-solid fa-couch" style="color:var(--primary);"></i> Seats: <strong style="color:var(--primary);">${escapeHtml(b.seats)}</strong></p>
+                                        ${b.food ? `<p style="margin-top:0.25rem;"><i class="fa-solid fa-hotdog" style="color:var(--primary);"></i> Snacks: <strong style="color:var(--accent);">${escapeHtml(b.food)}</strong></p>` : ''}
+                                        ${b.foodDeliveryTime ? `<p style="margin-top:0.25rem;"><i class="fa-solid fa-bell-concierge" style="color:var(--accent);"></i> Food delivery: <strong style="color:var(--accent);">${escapeHtml(b.foodDeliveryTime)}</strong></p>` : ''}
                                     </div>
                                     <div class="show-meta" style="justify-content:space-between;">
-                                        <div class="price" style="color:var(--success);">₹${b.totalPrice || 0}</div>
-                                        <button class="btn btn-sm btn-outline" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);" onclick="cancelBooking('${b.id}')"><i class="fa-solid fa-trash-can"></i> Cancel Ticket</button>
+                                        <div class="price" style="color:var(--success);">₹${escapeHtml(b.totalPrice || 0)}</div>
+                                        <button class="btn btn-sm btn-outline" data-cancel-booking="${bookingId}" style="margin-top:0.5rem; border-color:var(--danger); color:var(--danger);"><i class="fa-solid fa-trash-can"></i> Cancel Ticket</button>
                                     </div>
                                 </div>
-                            `).join('');
+                            `;
+                    }).join('');
+                    bookingsEl.querySelectorAll('[data-cancel-booking]').forEach(button => {
+                        button.addEventListener('click', () => cancelBooking(button.dataset.cancelBooking));
+                    });
                 }
             } catch (e) {
                 showEmpty('dashboard-bookings', 'Could not load upcoming bookings');
@@ -420,18 +166,20 @@
                         poster: await getBestMoviePoster(m),
                     })));
                     moviesEl.innerHTML = movies.slice(0, 4).map((m, i) => {
+                        const movieId = Number(m.id);
+                        if (!Number.isSafeInteger(movieId) || movieId <= 0) return '';
                         const poster = cards[i]?.poster || '';
                         return `
-                            <a href="movie-detail.html?id=${m.id}" class="card">
+                            <a href="movie-detail.html?id=${movieId}" class="card">
                                 <div class="card-img ${poster ? '' : 'no-image'}">
-                                    ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='▶';" />` : '▶'}
+                                ${poster ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(m.title || 'Untitled movie')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.textContent='▶';" />` : '▶'}
                                 </div>
                                 <div class="card-body">
-                                    <h3>${m.title}</h3>
-                                    <p>${m.description || 'Experience in cinema halls near you.'}</p>
+                                <h3>${escapeHtml(m.title || 'Untitled movie')}</h3>
+                                <p>${escapeHtml(m.description || 'Experience in cinema halls near you.')}</p>
                                     <div class="badge-group">
-                                        ${m.genre ? `<span class="badge badge-genre">${m.genre}</span>` : ''}
-                                        ${m.rating ? `<span class="badge badge-rating"><span style="color:var(--primary);">★</span> ${m.rating}</span>` : ''}
+                                    ${m.genre ? `<span class="badge badge-genre">${escapeHtml(m.genre)}</span>` : ''}
+                                    ${m.rating ? `<span class="badge badge-rating"><span style="color:var(--primary);">★</span> ${escapeHtml(m.rating)}</span>` : ''}
                                     </div>
                                 </div>
                                 <div class="card-footer">

@@ -222,16 +222,14 @@
     </div>
 
     <script src="../js/payment-config.js"></script>
-    <script src="../js/api.js?v=2"></script>
-    <script src="../js/utils.js?v=2"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/utils.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         const params = new URLSearchParams(window.location.search);
         const movieId = params.get('id');
         let currentShow = null;
         let selectedSeatIds = [];
-        let availableSeats = [];
-        let isVirtualSeats = false;
 
         const foodPrices = {
             popcorn: { name: 'Popcorn', price: 180 },
@@ -351,14 +349,10 @@
                                 ${movie.releaseDate ? `<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-secondary);"><i class="fa-regular fa-calendar-days"></i> ${movie.releaseDate}</span>` : ''}
                             </div>
                             <p>${movie.description || 'Experience this cinematic masterpiece in theater screens with immersive surround audio and ultra-crisp visuals.'}</p>
-                            <div class="detail-actions" style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem;">
-                                ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
-                                <span class="btn btn-outline btn-lg btn-like btn-like-detail ${isMovieLikedByUser(movie.id) ? 'liked' : ''}" data-movie-id="${movie.id}" onclick="toggleMovieLike(event, '${movie.id}')">${heartIconSVG()} <span class="like-count" style="font-size:1.1rem;">${likeCountLabel(getMovieLikeCount(movie))}</span></span>
-                            </div>
+                            ${userIsAdmin() ? '<a href="admin.html" class="btn btn-outline btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-pen-to-square"></i> Edit Movie</a>' : '<a href="#shows-list" class="btn btn-primary btn-lg" style="margin-top:0.5rem;"><i class="fa-solid fa-ticket"></i> Book Tickets</a>'}
                         </div>
                     </div>
                 `;
-                window.__movieLikeBase = window.__movieLikeBase || {};
                 loadShows();
             } catch (e) {
                 document.getElementById('movie-detail-hero').innerHTML = `
@@ -440,48 +434,22 @@
             showLoading('seat-map');
 
             try {
-                let allSeats = [];
-                let available = [];
-                isVirtualSeats = false;
-
-                if (show.screen?.id) {
-                    try {
-                        [allSeats, available] = await Promise.all([
-                            SeatAPI.getByScreen(show.screen.id),
-                            BookingAPI.getAvailableSeats(show.id).catch(() => [])
-                        ]);
-                    } catch (err) {
-                        console.warn('Backend seats fetch failed, building dynamic seats', err);
-                    }
+                if (!show.screen?.id) {
+                    throw new Error('This show is missing its screen configuration.');
                 }
 
-                availableSeats = available || [];
-                let availableIds = (available || []).map(s => String(s.id));
-
-                if (!allSeats || allSeats.length === 0) {
-                    if (show.screen?.id && (show.screen?.totalSeats || show.screen?.capacity)) {
-                        allSeats = await ensureSeatsForScreen(show.screen.id, show.screen?.totalSeats || show.screen?.capacity || 40);
-                    }
+                const [allSeats, available] = await Promise.all([
+                    SeatAPI.getByScreen(show.screen.id),
+                    BookingAPI.getAvailableSeats(show.id)
+                ]);
+                if (!Array.isArray(allSeats) || !Array.isArray(available)) {
+                    throw new Error('The backend returned an invalid seat availability response.');
                 }
-
-                if (!allSeats || allSeats.length === 0) {
-                    isVirtualSeats = true;
-                    allSeats = [];
-                    const rowsList = ['A', 'B', 'C', 'D', 'E'];
-                    rowsList.forEach(r => {
-                        for (let col = 1; col <= 8; col++) {
-                            const seatNum = `${r}${col}`;
-                            allSeats.push({
-                                id: seatNum,
-                                seatNumber: seatNum,
-                                row: r,
-                                col: col,
-                                seatType: r === 'A' ? 'VIP' : r === 'B' ? 'PREMIUM' : 'REGULAR'
-                            });
-                        }
-                    });
-                    availableIds = allSeats.map(s => String(s.id));
+                if (allSeats.length === 0) {
+                    showEmpty('seat-map', 'No seats are configured for this screen yet. Please contact the theater.');
+                    return;
                 }
+                const availableIds = new Set(available.map(s => String(s.id)));
 
                 const rows = {};
                 allSeats.forEach(seat => {
@@ -500,7 +468,7 @@
 
                     rows[row].sort((a, b) => (a.col || 0) - (b.col || 0)).forEach(seat => {
                         const seatId = String(seat.id);
-                        const isAvailable = isVirtualSeats || availableIds.length === 0 || availableIds.includes(seatId);
+                        const isAvailable = availableIds.has(seatId);
                         const seatDiv = document.createElement('div');
                         let typeClass = '';
                         if (seat.seatType === 'VIP') typeClass = ' vip';
@@ -521,8 +489,8 @@
 
                 updateSummary();
             } catch (e) {
-                console.error('Seat rendering error:', e);
-                document.getElementById('seat-map').innerHTML = '<div class="empty-state"><p>Could not render seat configuration</p></div>';
+                console.error('Seat availability could not be loaded:', e);
+                showEmpty('seat-map', 'Live seat availability could not be loaded. Please close and retry.');
             }
         }
 
@@ -596,105 +564,81 @@
         }
 
         // Open Razorpay Popup
-        function openRazorpayCheckout(grandTotal, user) {
-            const keyId = window.__RAZORPAY_KEY_ID || "rzp_test_TVIbi3HYRfxI0o";
-
-            const options = {
-                key: keyId,
-                amount: grandTotal * 100, // Amount in paise
-                currency: 'INR',
-                name: 'BookMyShow',
-                description: `Movie Tickets & Snacks Payment`,
-                image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=200&q=80',
-                prefill: {
-                    name: user.name || 'Movie Lover',
-                    email: user.email || 'user@example.com',
-                    contact: user.phone || '9876543210'
-                },
-                theme: {
-                    color: '#f84464'
-                },
-                modal: {
-                    escape: true,
-                    ondismiss: () => {
-                        showToast('Payment window closed', 'info');
-                        document.getElementById('confirm-btn').disabled = false;
-                    }
-                },
-                handler: async function (response) {
-                    showToast('<i class="fa-solid fa-credit-card"></i> Payment Received! Finalizing ticket confirmation...', 'success');
-                    await finalizeBookingAfterPayment(response.razorpay_payment_id || 'PAY_' + Date.now());
-                }
+        function buildBookingPaymentRequest(user) {
+            return {
+                userId: user.id,
+                showId: currentShow.id,
+                seatIds: selectedSeatIds.map(Number),
+                foodItems: Object.entries(foodQuantities)
+                    .filter(([, quantity]) => quantity > 0)
+                    .map(([itemId, quantity]) => ({ itemId, quantity })),
+                foodDeliveryTime: getSelectedDeliveryTime() || null
             };
+        }
 
+        async function finalizeBookingAfterPayment(paymentResponse) {
             try {
-                if (typeof Razorpay !== 'undefined') {
-                    const rzp = new Razorpay(options);
-                    rzp.on('payment.failed', function (res) {
-                        showToast(`Payment failed: ${res.error?.description || 'Transaction declined'}`, 'error');
-                        document.getElementById('confirm-btn').disabled = false;
-                    });
-                    rzp.open();
-                } else {
-                    // Fallback if Razorpay CDN blocked by browser extension
-                    showToast('Razorpay Gateway opening...', 'info');
-                    setTimeout(() => finalizeBookingAfterPayment('SIM_' + Date.now()), 1500);
-                }
+                await PaymentAPI.verify({
+                    razorpayOrderId: paymentResponse.razorpay_order_id,
+                    razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                    razorpaySignature: paymentResponse.razorpay_signature
+                });
+                showToast('Booking and payment confirmed successfully!', 'success');
+                closeModal('seat-modal');
+                setTimeout(() => window.location.href = 'bookings.html', 1000);
             } catch (err) {
-                console.error('Razorpay invocation error:', err);
-                finalizeBookingAfterPayment('SIM_' + Date.now());
+                console.error('Booking confirmation failed after payment:', err);
+                showToast(`Payment received, but booking confirmation failed. Contact support with payment ID ${paymentResponse.razorpay_payment_id}.`, 'error');
+                document.getElementById('confirm-btn').disabled = false;
             }
         }
 
-        async function finalizeBookingAfterPayment(paymentId) {
-            const user = getLoggedInUser();
-            const foodList = [];
-            let foodTotal = 0;
-            Object.entries(foodQuantities).forEach(([k, qty]) => {
-                if (qty > 0) {
-                    const item = foodPrices[k];
-                    foodTotal += item.price * qty;
-                    foodList.push(`${item.name} x${qty}`);
-                }
-            });
-
-            const seatIdsPayload = selectedSeatIds.map(id => {
-                const num = Number(id);
-                return isNaN(num) ? 1 : num;
-            });
-
-            const grandTotal = (selectedSeatIds.length * (currentShow.ticketPrice || 150)) + foodTotal;
-
-            const bookingResult = await BookingAPI.create({
-                userId: user.id,
-                showId: currentShow.id,
-                seatIds: seatIdsPayload
-            }).catch(err => ({ id: Math.floor(Math.random() * 9000) + 1000 }));
-
+        async function openRazorpayCheckout(user) {
+            const confirmBtn = document.getElementById('confirm-btn');
             try {
-                const localBookings = JSON.parse(localStorage.getItem('bms_extra_bookings') || '[]');
-                localBookings.unshift({
-                    id: bookingResult?.id || Date.now(),
-                    userEmail: user?.email || '',
-                    movieTitle: currentShow?.movie?.title || 'Movie',
-                    theaterName: currentShow?.screen?.theater?.name || 'Multiplex',
-                    screenName: currentShow?.screen?.name || 'Audi 1',
-                    showDate: currentShow?.showDate,
-                    startTime: currentShow?.startTime,
-                    seats: selectedSeatIds.join(', '),
-                    food: foodList.join(', ') || 'No Snacks',
-                    deliveryTime: getSelectedDeliveryTime() || 'Not selected',
-                    totalPrice: grandTotal,
-                    paymentId: paymentId,
-                    status: 'CONFIRMED',
-                    bookedAt: new Date().toISOString()
-                });
-                localStorage.setItem('bms_extra_bookings', JSON.stringify(localBookings));
-            } catch (e) {}
+                const paymentOrder = await PaymentAPI.createOrder(buildBookingPaymentRequest(user));
+                if (typeof Razorpay === 'undefined') {
+                    throw new Error('Razorpay checkout could not be loaded. Please try again.');
+                }
 
-            showToast('<i class="fa-solid fa-circle-check"></i> Booking & Payment Confirmed Successfully!', 'success');
-            closeModal('seat-modal');
-            setTimeout(() => window.location.href = 'bookings.html', 1000);
+                const options = {
+                    key: paymentOrder.keyId,
+                    order_id: paymentOrder.orderId,
+                    amount: paymentOrder.amount,
+                    currency: paymentOrder.currency,
+                    name: paymentOrder.name || 'BookMyShow',
+                    description: paymentOrder.description || 'Movie tickets and snacks',
+                    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=200&q=80',
+                    prefill: {
+                        name: user.name || 'Movie Lover',
+                        email: user.email || 'user@example.com',
+                        contact: user.phone || '9876543210'
+                    },
+                    theme: { color: '#f84464' },
+                    modal: {
+                        escape: true,
+                        ondismiss: () => {
+                            showToast('Payment window closed', 'info');
+                            confirmBtn.disabled = false;
+                        }
+                    },
+                    handler: async response => {
+                        showToast('Payment received. Verifying and confirming your booking...', 'info');
+                        await finalizeBookingAfterPayment(response);
+                    }
+                };
+
+                const checkout = new Razorpay(options);
+                checkout.on('payment.failed', event => {
+                    showToast(`Payment failed: ${event.error?.description || 'Transaction declined'}`, 'error');
+                    confirmBtn.disabled = false;
+                });
+                checkout.open();
+            } catch (err) {
+                console.error('Could not open Razorpay checkout:', err);
+                showToast(err.message || 'Could not start payment. Please try again.', 'error');
+                confirmBtn.disabled = false;
+            }
         }
 
         async function confirmBooking() {
@@ -717,15 +661,8 @@
             const confirmBtn = document.getElementById('confirm-btn');
             confirmBtn.disabled = true;
 
-            let foodTotal = 0;
-            Object.entries(foodQuantities).forEach(([k, qty]) => {
-                if (qty > 0) foodTotal += foodPrices[k].price * qty;
-            });
-            const grandTotal = (selectedSeatIds.length * (currentShow.ticketPrice || 150)) + foodTotal;
-
-            // Trigger Razorpay Payment Gateway Popup!
             showToast('Opening Razorpay Payment Gateway...', 'info');
-            openRazorpayCheckout(grandTotal, user);
+            await openRazorpayCheckout(user);
         }
 
         // ===== TERMS CHECKBOX: poori row clickable =====

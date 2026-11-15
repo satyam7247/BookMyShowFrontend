@@ -53,8 +53,8 @@
       <div class="grid grid-4" id="movies-grid"></div>
     </div>
 
-    <script src="js/api.js?v=2"></script>
-    <script src="js/utils.js?v=2"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
     <script>
       let allMovies = [];
       let visibleMovies = [];
@@ -160,23 +160,30 @@
         );
         grid.innerHTML = movies
           .map((m, i) => {
+            const movieId = Number(m.id);
+            if (!Number.isSafeInteger(movieId) || movieId <= 0) return "";
             const poster = cards[i]?.poster || "";
+            const title = escapeHtml(m.title || "Untitled movie");
+            const description = escapeHtml(m.description || "Experience the thrill in high definition cinema sound & visual.");
             const movieAction = canBook
               ? '<span class="btn btn-sm btn-primary">Book Tickets</span>'
-              : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='pages/admin.html?editMovie=${m.id}'">Edit Movie</span>`;
-            const likeDisplay = `<span class="btn-like like-display ${isMovieLikedByUser(m.id) ? 'liked' : ''}" title="Like this movie on its detail page">${heartIconSVG()} <span class="like-count">${likeCountLabel(getMovieLikeCount(m))}</span></span>`;
-            const ratingDisplay = m.rating ? `<span class="badge badge-rating" title="IMDb-style rating"><i class="fa-solid fa-star" style="color:var(--accent);"></i> ${m.rating}</span>` : '';
+              : `<span class="btn btn-sm btn-outline" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='pages/admin.html?editMovie=${movieId}'">Edit Movie</span>`;
                         return `
-                <a href="pages/movie-detail.html?id=${m.id}" class="card">
+                <a href="pages/movie-detail.html?id=${movieId}" class="card">
                     <div class="card-img ${poster ? '' : 'no-image'}">
-                        ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<i class=&quot;fa-solid fa-clapperboard&quot;></i>';" />` : '<i class="fa-solid fa-clapperboard"></i>'}
+                        ${poster ? `<img src="${escapeHtml(poster)}" alt="${title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<i class=&quot;fa-solid fa-clapperboard&quot;></i>';" />` : '<i class="fa-solid fa-clapperboard"></i>'}
                     </div>
                     <div class="card-body">
-                        <h3>${m.title}</h3>
+                        <h3>${title}</h3>
+                        <p>${description}</p>
+                        <div class="badge-group">
+                            ${m.genre ? `<span class="badge badge-genre"><i class="material-icons">theater_comedy</i> ${escapeHtml(m.genre)}</span>` : ""}
+                            ${m.language ? `<span class="badge badge-lang"><i class="material-icons">language</i> ${escapeHtml(m.language)}</span>` : ""}
+                            ${m.rating ? `<span class="badge badge-rating"><i class="material-icons" style="color:var(--accent);">star</i> ${escapeHtml(m.rating)}</span>` : ""}
+                        </div>
                     </div>
                     <div class="card-footer">
-                        ${likeDisplay}
-                        ${ratingDisplay}
+                        <span class="duration"><i class="material-icons">schedule</i> ${m.durationMinutes ? escapeHtml(m.durationMinutes) + " min" : "2h 15m"}</span>
                         ${movieAction}
                     </div>
                 </a>
