@@ -554,7 +554,7 @@ button, input, select, textarea {
 .card-img {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9; /* landscape image - screenshot jaisa */
+    aspect-ratio: 2 / 3;
     background: var(--bg-surface);
     overflow: hidden;
     display: flex;
@@ -563,10 +563,12 @@ button, input, select, textarea {
 }
 
 .card-img img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center 80%; /* image ka focus niche - bottom ka hissa zyada dikhe */
+    object-position: center center;
     display: block;
     transition: transform 0.5s var(--ease-smooth);
 }
@@ -773,7 +775,8 @@ button, input, select, textarea {
     display: flex;
     align-items: center;
     background-size: cover;
-    background-position: center;
+    background-position: center center;
+    background-repeat: no-repeat;
     overflow: hidden;
 }
 
@@ -799,6 +802,7 @@ button, input, select, textarea {
 }
 
 .movie-poster-large {
+    position: relative;
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
@@ -808,9 +812,12 @@ button, input, select, textarea {
 }
 
 .movie-poster-large img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
     display: block;
 }
 
