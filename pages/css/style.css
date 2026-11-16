@@ -1677,3 +1677,37 @@ table td {
         font-size: 0.82rem;
     }
 }
+
+@media (hover: hover) and (pointer: fine) {
+    .cursor-ring {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 30px;
+        height: 30px;
+        border: 2px solid rgba(248, 68, 100, 0.9);
+        border-radius: 50%;
+        box-shadow: 0 0 16px rgba(248, 68, 100, 0.28);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate3d(-100px, -100px, 0);
+        transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+        z-index: 10002;
+        will-change: transform;
+    }
+
+    .cursor-ring.is-visible {
+        opacity: 1;
+    }
+
+    .cursor-ring.is-hovering {
+        width: 42px;
+        height: 42px;
+        background-color: rgba(248, 68, 100, 0.1);
+    }
+
+    .cursor-ring.is-pressed {
+        width: 22px;
+        height: 22px;
+    }
+}

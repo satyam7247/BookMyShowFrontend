@@ -545,7 +545,40 @@ async function nativeShare() {
 }
 
 // ===== ON LOAD =====
+function initializeCursorRing() {
+    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    const cursorRing = document.createElement('span');
+    cursorRing.className = 'cursor-ring';
+    cursorRing.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(cursorRing);
+
+    document.addEventListener('pointermove', event => {
+        if (event.pointerType !== 'mouse') return;
+        cursorRing.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
+        cursorRing.classList.add('is-visible');
+        const target = event.target instanceof Element ? event.target : null;
+        cursorRing.classList.toggle(
+            'is-hovering',
+            Boolean(target?.closest('a, button, input, select, textarea, label, [role="button"], [tabindex]:not([tabindex="-1"])'))
+        );
+    });
+
+    document.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse') cursorRing.classList.add('is-pressed');
+    });
+    document.addEventListener('pointerup', () => cursorRing.classList.remove('is-pressed'));
+    document.addEventListener('pointercancel', () => cursorRing.classList.remove('is-pressed'));
+    document.addEventListener('pointerout', event => {
+        if (event.pointerType === 'mouse' && !event.relatedTarget) {
+            cursorRing.classList.remove('is-visible', 'is-hovering', 'is-pressed');
+        }
+    });
+    window.addEventListener('blur', () => cursorRing.classList.remove('is-visible', 'is-hovering', 'is-pressed'));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initializeCursorRing();
     updateNavUser();
     updateNavLinksForRole();
     const navToggle = document.getElementById('nav-toggle');
