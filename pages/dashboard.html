@@ -93,6 +93,11 @@
                 </div>
             `;
 
+            showLoading('dashboard-movies');
+            const moviesRequest = MovieAPI.getAll()
+                .then(movies => ({ movies, error: null }))
+                .catch(error => ({ movies: null, error }));
+
             // Load bookings
             const bookingsEl = document.getElementById('dashboard-bookings');
             showLoading('dashboard-bookings');
@@ -156,9 +161,10 @@
 
             // Load movies
             const moviesEl = document.getElementById('dashboard-movies');
-            showLoading('dashboard-movies');
             try {
-                const movies = await MovieAPI.getAll();
+                const moviesResult = await moviesRequest;
+                if (moviesResult.error) throw moviesResult.error;
+                const movies = moviesResult.movies;
                 if (!movies || movies.length === 0) {
                     showEmpty('dashboard-movies', 'No movies currently showing');
                 } else {

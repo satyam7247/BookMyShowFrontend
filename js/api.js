@@ -18,6 +18,67 @@ function resolveApiBase() {
 }
 
 const API = resolveApiBase();
+const PUBLIC_CATALOG_ENDPOINT_PATTERN =
+    /^\/(?:cities|movies(?:\/\d+)?|theaters(?:\/city\/\d+)?|screens(?:\/\d+|\/theater\/\d+)?|seats\/screen\/\d+|shows(?:\/movie\/\d+)?)$/;
+const PUBLIC_CATALOG_CACHE_PREFIX = `bms-public-catalog:${API}:`;
+const PUBLIC_CATALOG_CACHE_TTL_MS = 60 * 1000;
+const PUBLIC_CATALOG_CACHE_MAX_CHARS = 200000;
+
+function getApiEndpoint(url) {
+    if (!url.startsWith(API)) return '';
+    return url.slice(API.length).split('?')[0];
+}
+
+function isPublicCatalogRead(url, method = 'GET') {
+    return method.toUpperCase() === 'GET'
+        && PUBLIC_CATALOG_ENDPOINT_PATTERN.test(getApiEndpoint(url));
+}
+
+function readPublicCatalogCache(endpoint) {
+    if (!PUBLIC_CATALOG_ENDPOINT_PATTERN.test(endpoint) || typeof sessionStorage === 'undefined') {
+        return { hit: false };
+    }
+
+    const key = `${PUBLIC_CATALOG_CACHE_PREFIX}${endpoint}`;
+    try {
+        const cached = JSON.parse(sessionStorage.getItem(key) || 'null');
+        const age = Date.now() - cached?.savedAt;
+        if (cached && Number.isFinite(age) && age >= 0 && age < PUBLIC_CATALOG_CACHE_TTL_MS) {
+            return { hit: true, data: cached.data };
+        }
+        sessionStorage.removeItem(key);
+    } catch (error) {
+        console.warn('Could not read the public catalog cache.', error);
+    }
+    return { hit: false };
+}
+
+function writePublicCatalogCache(endpoint, data) {
+    if (!PUBLIC_CATALOG_ENDPOINT_PATTERN.test(endpoint) || typeof sessionStorage === 'undefined') return;
+    try {
+        const serialized = JSON.stringify({ savedAt: Date.now(), data });
+        if (serialized.length <= PUBLIC_CATALOG_CACHE_MAX_CHARS) {
+            sessionStorage.setItem(`${PUBLIC_CATALOG_CACHE_PREFIX}${endpoint}`, serialized);
+        }
+    } catch (error) {
+        console.warn('Could not save the public catalog cache.', error);
+    }
+}
+
+function invalidatePublicCatalogCache(endpoint) {
+    if (!/^\/(?:cities|movies|theaters|screens|seats|shows)(?:\/|$)/.test(endpoint)
+        || typeof sessionStorage === 'undefined') return;
+    try {
+        for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+            const key = sessionStorage.key(index);
+            if (key && key.startsWith(PUBLIC_CATALOG_CACHE_PREFIX)) {
+                sessionStorage.removeItem(key);
+            }
+        }
+    } catch (error) {
+        console.warn('Could not clear the public catalog cache.', error);
+    }
+}
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
     const controller = new AbortController();
@@ -29,7 +90,11 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
     } catch {
         accessToken = null;
     }
-    if (accessToken && !headers.has('Authorization')) {
+    const method = (options.method || 'GET').toUpperCase();
+    const endpoint = getApiEndpoint(url);
+    const isPublicAuthRequest = method === 'POST' && /^\/users\/(?:login|register)$/.test(endpoint);
+    if (accessToken && !headers.has('Authorization')
+        && !isPublicCatalogRead(url, method) && !isPublicAuthRequest) {
         headers.set('Authorization', `Bearer ${accessToken}`);
     }
 
@@ -65,6 +130,9 @@ function parseApiError(res, rawBody, fallbackText) {
 
 // ===== GENERIC FETCH HELPERS =====
 async function apiGet(endpoint) {
+    const cached = readPublicCatalogCache(endpoint);
+    if (cached.hit) return cached.data;
+
     const url = `${API}${endpoint}`;
     const res = await fetchWithTimeout(url);
     const rawBody = await res.text().catch(() => '');
@@ -72,7 +140,9 @@ async function apiGet(endpoint) {
     if (parsedError) throw parsedError;
     if (!rawBody) return null;
     try {
-        return JSON.parse(rawBody);
+        const data = JSON.parse(rawBody);
+        writePublicCatalogCache(endpoint, data);
+        return data;
     } catch {
         return rawBody;
     }
@@ -88,6 +158,7 @@ async function apiPost(endpoint, data) {
     const rawBody = await res.text().catch(() => '');
     const parsedError = parseApiError(res, rawBody, 'Request failed');
     if (parsedError) throw parsedError;
+    invalidatePublicCatalogCache(endpoint);
     if (!rawBody) return null;
     try {
         return JSON.parse(rawBody);
@@ -118,6 +189,7 @@ async function apiPut(endpoint, data) {
     const rawBody = await res.text().catch(() => '');
     const parsedError = parseApiError(res, rawBody, 'Update failed');
     if (parsedError) throw parsedError;
+    invalidatePublicCatalogCache(endpoint);
     if (!rawBody) return null;
     try {
         return JSON.parse(rawBody);
@@ -144,6 +216,7 @@ async function apiDelete(endpoint) {
     const rawBody = await res.text().catch(() => '');
     const parsedError = parseApiError(res, rawBody, 'Delete failed');
     if (parsedError) throw parsedError;
+    invalidatePublicCatalogCache(endpoint);
     return rawBody;
 }
 

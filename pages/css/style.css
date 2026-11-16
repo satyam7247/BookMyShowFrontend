@@ -449,7 +449,7 @@ button, input, select, textarea {
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    opacity: 0.8; /* Image thodi clear dikhe */
+    opacity: 1;
     transition: background-image 1s ease-in-out;
 }
 
@@ -460,10 +460,10 @@ button, input, select, textarea {
     z-index: 2;
     /* Bottom side se lamba black gradient taaki movie cards ke saath smooth mix ho */
     background: linear-gradient(180deg, 
-        rgba(11, 15, 25, 0.1) 0%, 
-        rgba(11, 15, 25, 0.3) 40%, 
-        rgba(11, 15, 25, 0.7) 70%, 
-        rgba(11, 15, 25, 1) 100%);
+        rgba(11, 15, 25, 0.08) 0%,
+        rgba(11, 15, 25, 0.2) 40%,
+        rgba(11, 15, 25, 0.34) 70%,
+        rgba(11, 15, 25, 0.48) 100%);
 }
 
 .hero-content {
